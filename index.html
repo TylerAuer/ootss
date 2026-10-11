@@ -457,7 +457,7 @@ let gridLayer = null;
 
 let areaCounters = {};
 
-function getSolutionLink(name, solvable) {
+function getSolutionPlayerLink(name, solvable) {
   if (solvable) {
     return `play.html#${name}`;
   }
@@ -871,6 +871,43 @@ function baseLayerChange(name) {
   updateCRS(name);
 }
 
+const getCoordinates = marker => marker.feature.geometry.coordinates.map(String).join(',');
+
+function getTooltipTitle(marker) {
+  let o = marker.feature.properties;
+  let title = `<b>${o.name}</b> in ${o.area} (${getCoordinates(marker)})`;
+  return title;
+}
+
+const getTooltip = function(marker) {
+  let content = getTooltipTitle(marker);
+  let moves = solutions[marker.feature.properties.name];
+  if (moves) {
+    content += `<br>Soution: ${getMovesCount(moves)} moves`;
+  }
+  return content;
+};
+
+function openPopup(e) {
+  const marker = e.target;
+  let o = marker.feature.properties;
+
+  let backlink = `<a class="copyable" href="${getMapURL(o.name)}" title="Click to copy link to clipboard"><i class="fa fa-link"></i></a>`;
+  let header = `<b class="copyable" title="Click to copy name to clipboard">${o.name}</b></a> in ${o.area} (${getCoordinates(marker)}) ${backlink}`;
+
+  let sol = solutions[o.name];
+
+  let image = imagelist[o.name] ? `<a href="javascript:openGallery('${o.name}')" title="Click to open image gallery" class="image-wrapper"><img class="popup-image" src="images/levels/${o.name}.webp"></a>` : '';
+  let player = youtube[o.name] ? `<a href="${youtube[o.name]}" target=_blank>YouTube</a>` : (sol ? `<a href="${getSolutionPlayerLink(o.name, true)}" target=_blank>Solution&nbsp;Player</a>`:'');
+  let moves = sol ? `<span class="wrap">${player}&nbsp;(${getMovesCount(sol)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(sol)}</span></span>`:'';
+
+  let content = `${header}${image}${moves}`;
+
+  marker.unbindPopup();
+  marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
+  marker.openPopup();
+}
+
 function drawMap() {
 
   let baseLayers={}
@@ -1119,18 +1156,6 @@ function drawMap() {
 
       marker.feature = feature;
 
-      const getCoordinates = marker=>`${marker.feature.geometry.coordinates[0]},${marker.feature.geometry.coordinates[1]}`;
-
-      const getTooltip = function(marker) {
-        let name = marker.feature.properties.name;
-        let lines = [`<b>${name}</b> in ${marker.feature.properties.area} (${getCoordinates(marker)})`];
-        let s = (solutions[name]||'');
-        if (s) {
-          lines.push(`Soution: ${getMovesCount(s)} moves`);
-        }
-        return lines.join('<br/>');
-      };
-
       marker.bindTooltip(getTooltip, {offset: [20,-35]});
 
       //marker.bindPopup(marker => { return `<div class="image-wrapper"><img src="images/levels/${marker.feature.properties.name}.webp"></div>`}, {
@@ -1147,57 +1172,14 @@ function drawMap() {
           history.replaceState(null, '', window.location.pathname + window.location.search);
       })
 
-      marker.on('click', () => {
-        const props = marker.feature.properties;
-        const name = props.name;
-
-        const buildWrapper = (bodyHTML) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'image-wrapper';
-          let backlink = `<a class="copyable" href="${getMapURL(props.name)}" title="Click to copy link to clipboard"><i class="fa fa-link"></i></a>`;
-          let html = `<b class="copyable" title="Click to copy name to clipboard">${props.name}</b></a> in ${props.area} (${getCoordinates(marker)}) ${backlink}`;
-          html += bodyHTML;
-          const s = solutions[props.name]||'';
-          if (s) {
-            let spl = `<a href="${getSolutionLink(name,true)}" target=_blank>Solution&nbsp;Player</a>&nbsp`;
-
-            if (props.area.includes('promesst')) { 
-              spl = youtube[props.name] ? `<a href="${youtube[props.name]}" target=_blank>YouTube</a>&nbsp;` :'';
-            }
-
-            html += `<span class="wrap">${spl}(${getMovesCount(s)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(s)}</span></span>`;
-          }
-          wrapper.innerHTML = html;
-          return wrapper;
-        };
-
-        const img = new Image();
-        img.src = `images/levels/${name}.webp`;
-
-        img.onload = () => {
-          const wrapper = buildWrapper(`<a href="javascript:openGallery('${name}');" title="Click to open image gallery"><img class="popup-image" src="${img.src}"></a>`);
-          marker.unbindPopup();
-          marker.bindPopup(wrapper, { offset: [0,5], maxWidth: 360, minWidth: 360 });
-          marker.openPopup();
-        };
-
-        img.onerror = () => {
-          const wrapper = buildWrapper(`<div class="image-error"></div>`);
-          marker.unbindPopup();
-          marker.bindPopup(wrapper, { offset: [0,5] });
-          marker.openPopup();
-        };
-      });
+      marker.on('click', openPopup);
 
       let group = feature.properties.area;
 
       if (!regionColors[group]) {
-
         group = 'unsorted';
-
         marker.setOpacity(0.5);
       }
-
 
       if (!layers[group]) {
         layers[group] = L.layerGroup();
@@ -1476,7 +1458,7 @@ window.onload = function() {
 
     solutions = Object.fromEntries(sol.split('\n').map(s => s.trim().split(':', 2)).filter(([, v])=> v && v.length>=2));
     youtube = Object.fromEntries(yt.split('\n').map(s => s.trim().split(',', 2)).filter(([, v])=> v && v.length>=2));
-    imagelist = Object.fromEntries(img.split('\n').map(s => s.trim().split('.web')).filter(([, v])=> v));
+    imagelist = Object.fromEntries(img.split('\n').map(s => s.trim()).filter(Boolean).map(s => [s.replace(/\.[^.]+$/, ''), true]));
 
     fetch('data/regions.json').then(r=>r.json()).then(data=>{
       regionData = data;
