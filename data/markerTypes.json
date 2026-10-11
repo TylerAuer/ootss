@@ -21,13 +21,13 @@
           "match": {
             "area": {
               "promesst1_and_2":   { "color": "#0000ff" },
-              "mirror":     { "color": "#ffa500" },
-              "crossroads": { "color": "#ffff00" },
-              "heroes1":    { "color": "#ff0000" },
-              "heroes2":    { "color": "#00ff00" },
-              "heroes3":    { "color": "#ff00ff" },
-              "heroes_and_water":      { "color": "#00ffff" },
-              "mixture":    { "color": "#888" }
+              "mirror":            { "color": "#ffa500" },
+              "crossroads":        { "color": "#ffff00" },
+              "heroes1":           { "color": "#ff0000" },
+              "heroes2":           { "color": "#00ff00" },
+              "heroes3":           { "color": "#ff00ff" },
+              "heroes_and_water":  { "color": "#00ffff" },
+              "mixture":           { "color": "#888" }
             }
           }
         }
