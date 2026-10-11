@@ -22,7 +22,7 @@ LEVEL_NAME_MEMBER = 0x1000
 POSITION_MEMBERS = {0: "x", 1: "y", 2: "z"}
 
 # Mixed level sets: used for "area" only if no regular set lists the level.
-GENERIC_LEVEL_SETS = {"overworld", "worlds_collide", "intro", "intro_hard_puzzles"}
+GENERIC_LEVEL_SETS = {"overworld", "intro", "intro_hard_puzzles"}
 
 EPILOG = """\
 examples:
@@ -260,9 +260,7 @@ def pick_area(set_names):
     """Prefer a regular level set over a generic mixed one."""
     if not set_names:
         return None
-    regular = [s for s in set_names if s not in GENERIC_LEVEL_SETS]
-    return (regular or set_names)[0]
-
+    return next((s for s in set_names if s not in GENERIC_LEVEL_SETS and 'drafts' not in s),"UNDEFINED")
 
 def read_level_entries(entries):
     """Return a list of dicts: level name, x, y, z."""
