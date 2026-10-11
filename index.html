@@ -431,13 +431,23 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 
 <script>
 
+let localDataName = 'joricsOotSS';
+let localData = JSON.parse(localStorage.getItem(localDataName)) || {};
+let settings = localData;
+
+function saveSettings() {
+  localStorage.setItem(localDataName, JSON.stringify(localData));
+}
+
 let mapParam = {};
 
 let map = null;
 let markerGroup = null;
 let regionData = null;
 
-let regionColors = {};
+let regionColors = {
+  heroes_and_mirrors: 'forestgreen',
+};
 
 let images = [];
 
@@ -447,7 +457,7 @@ let polygonLayer = null;
 
 let solutions = {};
 let youtube = {};
-let imagelist = {};
+let imageList = {};
 let order = {};
 
 let svgLayer = null;
@@ -509,8 +519,7 @@ function getIconHTML(feature, size=48) {
 
   options = options || {class:'fa fa-circle', bg:'dimgrey'};
 
-
-  options.bg = (imagelist[feature.properties.name] && regionColors[feature.properties.area]) || 'dimgrey';
+  options.bg = regionColors[feature.properties.area] || 'dimgrey';
 
   if (feature.properties.area=='locations') {
     options.bg = 'dimgrey';
@@ -889,6 +898,12 @@ const getTooltip = function(marker) {
   return content;
 };
 
+function youTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|[?&]v=|youtube(?:-nocookie)?\.com\/embed\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
 function openPopup(e) {
   const marker = e.target;
   let o = marker.feature.properties;
@@ -898,11 +913,18 @@ function openPopup(e) {
 
   let sol = solutions[o.name];
 
-  let image = imagelist[o.name] ? `<a href="javascript:openGallery('${o.name}')" title="Click to open image gallery" class="image-wrapper"><img class="popup-image" src="images/levels/${o.name}.webp"></a>` : '';
-  let player = youtube[o.name] ? `<a href="${youtube[o.name]}" target=_blank>YouTube</a>` : (sol ? `<a href="${getSolutionPlayerLink(o.name, true)}" target=_blank>Solution&nbsp;Player</a>`:'');
-  let moves = sol ? `<span class="wrap">${player}&nbsp;(${getMovesCount(sol)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(sol)}</span></span>`:'';
+  const ytId = youtube[o.name] ? youTubeId(youtube[o.name]) : null;
 
-  let content = `${header}${image}${moves}`;
+  let image = imageList[o.name]
+    ? `<a href="javascript:openGallery('${o.name}')" title="Click to open image gallery" class="image-wrapper"><img class="popup-image" src="images/levels/${o.name}.webp"></a>`
+    : ytId
+      ? `<a href="${youtube[o.name]}" class="image-wrapper" target="_blank" rel="noopener" title="Watch on YouTube"><img class="popup-image" src="https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg" alt=""></a>`
+      : '';
+
+  let player = youtube[o.name] ? `<a href="${youtube[o.name]}" target=_blank>YouTube</a>&nbsp;` : (sol ? `<a href="${getSolutionPlayerLink(o.name, true)}" target=_blank>Solution&nbsp;Player</a>&nbsp;`:'');
+  let moves = sol ? `<span class="wrap">(${getMovesCount(sol)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(sol)}</span></span>`:'';
+
+  let content = `${header}${image}${player}${moves}`;
 
   marker.unbindPopup();
   marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
@@ -952,6 +974,16 @@ function drawMap() {
 
   map.on('baselayerchange', function(e) {
     baseLayerChange(e.name);
+  });
+
+  if (settings.center && settings.zoom) {
+    map.setView(settings.center, settings.zoom, { animate: false });
+  }
+
+  map.on('moveend zoomend', function(e) {
+    settings.center = [map.getCenter().lat, map.getCenter().lng]; // avoid circular refs here
+    settings.zoom = map.getZoom();
+    saveSettings();
   });
 
 
@@ -1106,20 +1138,19 @@ function drawMap() {
 
       let title = feature.properties.name;
       let name = feature.properties.name;
-
       let area = feature.properties.area;
 
-      let solved = solutions[feature.properties.name];
+      let solved = solutions[name] || youtube[name];
+      let hasImage = imageList[name] || youtube[name];
 
       if (solved) {
         areaCounters[area] = (areaCounters[area] || 0) + 1;
       }
-
       //let count = solved ? areaCounters[area] : '?';
 
-      let count = solved ? '\u2714' : '?';
+      const count = solved ? '\u2714' : hasImage ? '\u25D0' : '?';
 
-      if (area != 'locations' && imagelist[feature.properties.name]) {
+      if (area != 'locations' && imageList[feature.properties.name]) {
         images.push( {src: `images/levels/${name}.webp`, name: name, area: area, title: title});
       }
 
@@ -1431,7 +1462,7 @@ window.onload = function() {
 
     solutions = Object.fromEntries(sol.split('\n').map(s => s.trim().split(':', 2)).filter(([, v])=> v && v.length>=2));
     youtube = Object.fromEntries(yt.split('\n').map(s => s.trim().split(',', 2)).filter(([, v])=> v && v.length>=2));
-    imagelist = Object.fromEntries(img.split('\n').map(s => s.trim()).filter(Boolean).map(s => [s.replace(/\.[^.]+$/, ''), true]));
+    imageList = Object.fromEntries(img.split('\n').map(s => s.trim()).filter(Boolean).map(s => [s.replace(/\.[^.]+$/, ''), true]));
     order = Object.fromEntries(ord.split('\n').map(s => s.trim()).filter(Boolean).map((s, i) => [s, i]));
 
     fetch('data/regions.json').then(r=>r.json()).then(data=>{
