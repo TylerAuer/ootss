@@ -188,7 +188,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 #closeBtn {
   position: absolute;
   top: 16px;
-  right: 20px;
+  left: 20px;
   width: 40px;
   height: 40px;
   display: flex;
@@ -448,6 +448,7 @@ let polygonLayer = null;
 let solutions = {};
 let youtube = {};
 let imagelist = {};
+let order = {};
 
 let svgLayer = null;
 let svg = null;
@@ -1118,7 +1119,6 @@ function drawMap() {
 
       let count = solved ? '\u2714' : '?';
 
-
       if (area != 'locations' && imagelist[feature.properties.name]) {
         images.push( {src: `images/levels/${name}.webp`, name: name, area: area, title: title});
       }
@@ -1131,43 +1131,18 @@ function drawMap() {
 
       let marker = customMarker(latlng, feature);
 
-      /*
-      let marker = L.marker(latlng, {
-        icon: L.divIcon({
-          html: `
-            <div class="custom-marker-container">
-              <div class="marker-icon"></div>
-              <div class="marker-label">${title}</div>
-            </div>
-          `,
-          className: 'custom-marker', // for additional styling
-          iconSize: [30, 50], // [width, height] - MUST include space for label
-          iconAnchor: [15, 40] // [x, y] - point of the icon that corresponds to marker location
-        }),
-
-        searchText: (title).toLowerCase(),
-      })
-      */
-
-
-      //let marker = L.marker(convert(feature.geometry.coordinates));
-
       counters[feature.properties.area] = (counters[feature.properties.area]||0) +1;
 
       marker.feature = feature;
 
       marker.bindTooltip(getTooltip, {offset: [20,-35]});
 
-      //marker.bindPopup(marker => { return `<div class="image-wrapper"><img src="images/levels/${marker.feature.properties.name}.webp"></div>`}, {
-
       marker.on('popupopen', () => {
         currentOpenMarker = marker;
-        //location.hash = marker.feature.properties.name;
       })
 
       marker.on('popupclose', () => {
         currentOpenMarker = null;
-        //location.hash = '';
         if (location.hash.length > 1) 
           history.replaceState(null, '', window.location.pathname + window.location.search);
       })
@@ -1191,18 +1166,12 @@ function drawMap() {
 
     }
 
-    //console.log('total', data.features.length);
-    //console.log(counters);
-
     let text =`Total markers: ${data.features.length}`;
 
     let alt = ''
     for (k in counters) {
       alt += `\n${k}: ${counters[k]}`;
     }
-
-    //document.querySelector('#info').innerHTML = text;
-    //document.querySelector('#info').title = alt;
 
     // update overlay names to include count
     var overlaysWithCounts = Object.fromEntries(
@@ -1213,15 +1182,12 @@ function drawMap() {
       })
     );
 
-
+    // sort overlay names
     //overlaysWithCounts = Object.fromEntries( Object.entries(overlaysWithCounts).sort((a, b) => a[0].localeCompare(b[0])) );
-
 
     let layercontrol = L.control.layers(baseLayers, overlaysWithCounts, {collapsed: true, position: 'bottomleft'}).addTo(map);
 
-
     map.on('zoom overlayadd', updateZoom);
-
 
     updateZoom();
 
@@ -1280,6 +1246,12 @@ function drawMap() {
     mini._miniMap.keyboard.disable();
     mini._miniMap.dragging.disable(); // optional: also prevent panning
         */
+
+    images.sort((a, b) => {
+      const ia = order[a.name] ?? Infinity;
+      const ib = order[b.name] ?? Infinity;
+      return ia - ib;
+    });
 
     initImages();
 
@@ -1451,20 +1423,21 @@ window.onload = function() {
     'data/solutions.txt',
     'data/youtube.txt',
     'data/images.txt',
+    'data/order.txt',
   ].map(url=>fetch(url).then(r=>r.text()));
 
   Promise.all(promises).then(data => {
-    let [sol, yt, img] = data;
+    let [sol, yt, img, ord] = data;
 
     solutions = Object.fromEntries(sol.split('\n').map(s => s.trim().split(':', 2)).filter(([, v])=> v && v.length>=2));
     youtube = Object.fromEntries(yt.split('\n').map(s => s.trim().split(',', 2)).filter(([, v])=> v && v.length>=2));
     imagelist = Object.fromEntries(img.split('\n').map(s => s.trim()).filter(Boolean).map(s => [s.replace(/\.[^.]+$/, ''), true]));
+    order = Object.fromEntries(ord.split('\n').map(s => s.trim()).filter(Boolean).map((s, i) => [s, i]));
 
     fetch('data/regions.json').then(r=>r.json()).then(data=>{
       regionData = data;
       drawMap();
     });
-
 
   });
 
