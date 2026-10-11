@@ -18,10 +18,24 @@ STRING_MEMBERS_BY_TYPE = {
     "Settings": {0x1054},
 }
 
+# Names used by the text export (known members only).
+BASE_MEMBER_NAMES = {
+    0: "x", 1: "y", 2: "z",
+    6: "rot_x", 7: "rot_y", 8: "rot_z", 9: "rot_w",
+    0x16: "float_0x16", 0x17: "float_0x17", 0x18: "float_0x18",  # default 1.0, purpose unknown
+    0x1F: "name",
+    0x21: "out_x", 0x22: "out_y", 0x23: "out_z",
+}
+TYPE_MEMBER_NAMES = {
+    "Level_Entry": {0x1000: "level"},
+    "Guy": {0x1004: "kind", 0x100E: "start_marker", 0x1011: "end_marker"},
+    "Settings": {0x1054: "level_name"},
+}
+
 LEVEL_NAME_MEMBER = 0x1000
 POSITION_MEMBERS = {0: "x", 1: "y", 2: "z"}
 
-# Mixed level sets: used for "area" only if no regular set lists the level.
+# Mixed level sets: never used as "area" if a regular set lists the level.
 GENERIC_LEVEL_SETS = {"overworld", "intro", "intro_hard_puzzles"}
 
 EPILOG = """\
@@ -32,8 +46,8 @@ examples:
   Unpack all entries (keeps the folders from the entry names):
     python simp_tool.py extract levels.package --output-dir unpacked
 
-  Unpack only some entries, and also write a decoded .json next to each .entities:
-    python simp_tool.py extract levels.package --name mirror_1.entities heroes1.level_set --decode-entities
+  Unpack only some entries, and also write decoded .json and .txt next to each .entities:
+    python simp_tool.py extract levels.package --name mirror_1.entities heroes1.level_set --decode-entities --text-entities
 
   List the entities of one level:
     python simp_tool.py entities levels.package --entry mirror_1.entities --list
@@ -41,11 +55,14 @@ examples:
   Dump all Mirror entities of one level (.bin + .json per entity):
     python simp_tool.py entities levels.package --entry mirror_1.entities --type Mirror
 
-  Dump the overworld Level_Entry that points at heroes1_1:
-    python simp_tool.py entities levels.package --entry overworld.entities --contains heroes1_1
+  Dump the overworld Level_Entry that points at heroes1_1, also as a text file:
+    python simp_tool.py entities levels.package --entry overworld.entities --contains heroes1_1 --text
 
-  Export all level entries of the overworld as GeoJSON markers:
-    python simp_tool.py markers levels.package --output level_entries.geojson
+  Export the level entries of the overworld as GeoJSON markers:
+    python simp_tool.py markers levels.package --entities overworld.entities --output level_entries.geojson
+
+  Collect markers from several sources (repeat the option; entry name or file path):
+    python simp_tool.py markers levels.package --entities overworld.entities --entities D:\\maps\\custom.entities
 
 Run 'python simp_tool.py COMMAND -h' for the options of one command.
 """
@@ -125,6 +142,16 @@ def load_source(path):
     if data[:4] == b"simp":
         return read_package(data)
     return {os.path.basename(path): data}
+
+
+def load_entities_source(entries, wanted):
+    """Return the bytes of an .entities source: a file on disk, or an entry in the package."""
+    if os.path.isfile(wanted):
+        return open(wanted, "rb").read()
+    name = find_entry(entries, wanted)
+    if name is None:
+        sys.exit(f"Entities source not found (not a file, not in the package): {wanted}")
+    return entries[name]
 
 
 # ----------------------------------------------------------------- entities
@@ -228,6 +255,25 @@ def entity_to_dict(entity_id, type_name, diff):
     }
 
 
+def entity_to_text(entity_id, type_name, diff):
+    """One header line, then one 'name = value' line per known member."""
+    lines = [f"{type_name} {entity_id}"]
+    unknown = 0
+    for member in decode_diff(type_name, diff):
+        number = member.get("member")
+        name = TYPE_MEMBER_NAMES.get(type_name, {}).get(number) or BASE_MEMBER_NAMES.get(number)
+        value = next((member[k] for k in ("float", "string", "u32") if k in member), None)
+        if name is None or value is None:
+            unknown += 1
+            continue
+        if isinstance(value, float):
+            value = f"{value:.7g}"
+        lines.append(f"{name} = {value}")
+    if unknown:
+        lines.append(f"# {unknown} unknown members not shown")
+    return "\n".join(lines) + "\n"
+
+
 # ------------------------------------------------------------------ markers
 
 def parse_level_set(text):
@@ -260,30 +306,29 @@ def pick_area(set_names):
     """Prefer a regular level set over a generic mixed one."""
     if not set_names:
         return None
-    return next((s for s in set_names if s not in GENERIC_LEVEL_SETS and 'drafts' not in s),"UNDEFINED")
+    return next((s for s in set_names if s not in GENERIC_LEVEL_SETS and 'drafts' not in s), "UNDEFINED")
 
-def read_level_entries(entries):
-    """Return a list of dicts: level name, x, y, z."""
-    name = find_entry(entries, "overworld.entities")
-    if name is None:
-        sys.exit("overworld.entities not found in the package.")
 
+def read_level_entries(entries, sources):
+    """Return a list of dicts (level name, x, y, z) from every given .entities source."""
     result = []
-    for _, type_name, diff in parse_entities(entries[name]):
-        if type_name != "Level_Entry":
-            continue
+    for source in sources:
+        data = load_entities_source(entries, source)
+        for _, type_name, diff in parse_entities(data):
+            if type_name != "Level_Entry":
+                continue
 
-        # Diffs only store non-default values, so a missing coordinate is 0.
-        position = {"x": 0.0, "y": 0.0, "z": 0.0}
-        level_name = None
-        for member in decode_diff(type_name, diff):
-            number = member.get("member")
-            if number in POSITION_MEMBERS:
-                position[POSITION_MEMBERS[number]] = member["float"]
-            elif number == LEVEL_NAME_MEMBER:
-                level_name = member["string"]
+            # Diffs only store non-default values, so a missing coordinate is 0.
+            position = {"x": 0.0, "y": 0.0, "z": 0.0}
+            level_name = None
+            for member in decode_diff(type_name, diff):
+                number = member.get("member")
+                if number in POSITION_MEMBERS:
+                    position[POSITION_MEMBERS[number]] = member["float"]
+                elif number == LEVEL_NAME_MEMBER:
+                    level_name = member["string"]
 
-        result.append({"level": level_name, **position})
+            result.append({"level": level_name, **position})
     return result
 
 
@@ -353,12 +398,18 @@ def command_extract(args):
         write_file(target, entries[name])
         print(f"{name} ({len(entries[name])} bytes)")
 
-        if args.decode_entities and name.lower().endswith(".entities"):
+        is_entities = name.lower().endswith(".entities")
+        if args.decode_entities and is_entities:
             records = parse_entities(entries[name])
             decoded = [entity_to_dict(*record) for record in records]
             write_file(target + ".json",
                        json.dumps(decoded, indent=1, ensure_ascii=False).encode("utf-8"))
             print(f"  decoded {len(decoded)} entities -> {target}.json")
+
+        if args.text_entities and is_entities:
+            blocks = [entity_to_text(*record) for record in parse_entities(entries[name])]
+            write_file(target + ".txt", "\n".join(blocks).encode("utf-8"))
+            print(f"  wrote {len(blocks)} entities as text -> {target}.txt")
 
 
 def record_matches(args, entity_id, type_name, diff):
@@ -410,12 +461,17 @@ def command_entities(args):
             f.write(diff)
         with open(base + ".json", "w", encoding="utf-8") as f:
             json.dump(entity_to_dict(entity_id, type_name, diff), f, indent=1, ensure_ascii=False)
+        if args.text:
+            with open(base + ".txt", "w", encoding="utf-8") as f:
+                f.write(entity_to_text(entity_id, type_name, diff))
         print(f"{type_name} id={entity_id} ({len(diff)} bytes) -> {base}.json / .bin")
 
 
 def command_markers(args):
     entries = load_source(args.source)
-    level_entries = read_level_entries(entries)
+    sources = args.entities
+
+    level_entries = read_level_entries(entries, sources)
     areas = read_level_areas(entries)
 
     with open(args.output, "w", encoding="utf-8") as f:
@@ -423,7 +479,7 @@ def command_markers(args):
 
     without_area = [e["level"] for e in level_entries
                     if not areas.get((e["level"] or "").lower())]
-    print(f"Wrote {len(level_entries)} level entries to {args.output}")
+    print(f"Wrote {len(level_entries)} level entries from {len(sources)} source(s) to {args.output}")
     if without_area:
         print(f"{len(without_area)} without an area (not in any level set): "
               + ", ".join(str(n) for n in without_area))
@@ -475,6 +531,9 @@ def build_parser():
                      help="folder to write into (default: %(default)s)")
     sub.add_argument("--decode-entities", action="store_true",
                      help="also write <file>.entities.json with all decoded entities")
+    sub.add_argument("--text-entities", action="store_true",
+                     help="also write <file>.entities.txt: every entity as a block of "
+                          "'name = value' lines (known members only)")
 
     sub = add_command(commands, "entities", "list or dump entity records of one level",
                       "python simp_tool.py entities levels.package "
@@ -493,13 +552,22 @@ def build_parser():
     sub.add_argument("--all", action="store_true", help="select every entity in the file")
     sub.add_argument("--list", action="store_true",
                      help="print 'id type size' per entity instead of writing files")
+    sub.add_argument("--text", action="store_true",
+                     help="also write <Type>_<id>.txt with one 'name = value' line "
+                          "per known member")
     sub.add_argument("--output-dir", metavar="DIR", default="entities_out",
                      help="folder for dumped files (default: %(default)s)")
 
-    sub = add_command(commands, "markers", "export overworld level entries as GeoJSON points",
-                      "python simp_tool.py markers levels.package --output level_entries.geojson",
+    sub = add_command(commands, "markers", "export level entries as GeoJSON points",
+                      "python simp_tool.py markers levels.package "
+                      "--entities overworld.entities --output level_entries.geojson",
                       command_markers)
     sub.add_argument("source", metavar="PACKAGE", help="path to levels.package")
+    sub.add_argument("--entities", metavar="SOURCE", action="append", required=True,
+                     help="an .entities source to collect Level_Entry markers from: an "
+                          "entry name inside the package (e.g. overworld.entities) or a "
+                          "file path on disk. Required; repeat the option for several "
+                          "sources")
     sub.add_argument("--output", metavar="FILE", default="level_entries.geojson",
                      help="GeoJSON file to write (default: %(default)s)")
 
