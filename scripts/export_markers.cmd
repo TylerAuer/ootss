@@ -1,2 +1,3 @@
-python simp_tool.py markers "E:\Games\Order of the Sinking Star\data\levels.package" --output markers.json --entities overworld.entities --entities intro.entities
+python simp_tool.py markers "E:\Games\Order of the Sinking Star\data\levels.package" --output markers.json --entities overworld.entities
+
 
