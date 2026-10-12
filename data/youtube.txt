@@ -3,3 +3,6 @@ beam_rooms,https://youtu.be/SH8pQVGjKbs
 promesst1_streamlined,https://youtu.be/2IwDYq98SR4
 oneway_dragon_toast,https://youtu.be/hCwJuCUJB3k?t=201
 torcoban_2,https://youtu.be/vqPVfVZoR_g
+worlds_collide_ps,https://youtu.be/y2HjCP_7niE
+blue_revolution_v2,https://youtu.be/dX0CDE_E9D4?t=196
+
