@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "run_id": 133890000000000000,
+  "scene": "skipping_stones",
+  "xmin": -6,
+  "ymin": -10,
+  "xmax": 78,
+  "ymax": 74,
+  "z": 16,
+  "ground": 0,
+  "overlap": 0.3,
+  "crop_world_size": 4,
+  "settle_ms": 200,
+  "center_first": true,
+  "center_x": 36,
+  "center_y": 32,
+  "freeze_time": true,
+  "require_map_view": false
+}

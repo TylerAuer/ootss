@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "run_id": 133890000000000000,
+  "scene": "overworld",
+  "xmin": -40,
+  "ymin": -20,
+  "xmax": 180,
+  "ymax": 170,
+  "z": 20,
+  "ground": 0,
+  "overlap": 0.3,
+  "crop_world_size": 9,
+  "settle_ms": 200,
+  "center_first": true,
+  "center_x": 80,
+  "center_y": 69,
+  "freeze_time": true,
+  "require_map_view": false
+}
