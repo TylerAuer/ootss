@@ -1170,7 +1170,7 @@ function drawMap() {
       }
       //let count = solved ? areaCounters[area] : '?';
 
-      const count = solutions[name] ? '\u2714' : youtube[name] ? `\u2197` : hasImage ? '\u25D0' : '?';
+      const count = solutions[name] ? '\u2714' : youtube[name] ? `\u2197` : hasImage ? '\u22EF' : '?';
 
       if (area != 'locations' && imageList[feature.properties.name]) {
         images.push( {src: `images/levels/${name}.webp`, name: name, area: area, title: title});
