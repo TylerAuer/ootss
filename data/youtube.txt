@@ -5,4 +5,5 @@ oneway_dragon_toast,https://youtu.be/hCwJuCUJB3k?t=201
 torcoban_2,https://youtu.be/vqPVfVZoR_g
 worlds_collide_ps,https://youtu.be/y2HjCP_7niE
 blue_revolution_v2,https://youtu.be/dX0CDE_E9D4?t=196
-
+sp_crystal_tuto,https://youtu.be/IrvNk4ph9qw?t=11263
+skipping_promesst,https://youtu.be/sBngSV_NVpE

@@ -446,13 +446,14 @@ let markerGroup = null;
 let regionData = null;
 
 let regionColors = {
+  // heroes_in_3d: `lightgrey`, // better transparent
   heroes_and_mirrors: 'forestgreen',
   worlds_collide: 'gold',
   sideways_gates: 'pink',
   skipping_stones: `slategrey`,
   beams_and_mirrors: `darkcyan`,
   monsters_and_beams: `orchid`,
-  // heroes_in_3d: `lightgrey`, // better transparent
+  beams_and_stones: 'lightgreen',
 };
 
 let images = [];
@@ -518,6 +519,17 @@ function focusMarkerByName(name) {
 }
 
 
+function getMarkerColor(x, y, v = 100, sx = 1, sy = sx) {
+  const b = { left: -77, top: 221.5, right: 219, bottom: 74 };
+  const dx = (x - (b.left + b.right) / 2) / (Math.abs(b.right - b.left) / 2 * sx);
+  const dy = -(Math.min(b.top, b.bottom) - y) / (Math.abs(b.top - b.bottom) / 2 * sy);
+  const h = Math.atan2(dx, dy) * 3 / Math.PI;
+  const s = Math.min(Math.hypot(dx, dy), 1);
+  const f = n => { const k = (n + h + 6) % 6; return Math.round(2.55 * v * (1 - s * Math.max(0, Math.min(k, 4 - k, 1)))).toString(16).padStart(2, '0') };
+  return `#${f(5)}${f(3)}${f(1)}`;
+}
+
+
 function getIconHTML(feature, size=48) {
 
   let title = feature.properties.title;
@@ -526,6 +538,9 @@ function getIconHTML(feature, size=48) {
   options = options || {class:'fa fa-circle', bg:'dimgrey'};
 
   options.bg = regionColors[feature.properties.area] || 'dimgrey';
+
+  //let c = feature.geometry.coordinates;
+  //options.bg = getMarkerColor(c[0],c[1]);
 
   if (feature.properties.area=='locations') {
     options.bg = 'dimgrey';
