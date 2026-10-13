@@ -187,6 +187,16 @@ def main():
 
         bn = base_name(tname, diff)
         sn = second_name(tname, diff)
+        name = sn or bn
+
+        props = {
+            "type": tname,
+            "id": eid,
+        }
+        if name is not None:
+            props["name"] = name
+        if bn is not None and bn != name:
+            props["base"] = bn
 
         features.append({
             "type": "Feature",
@@ -194,12 +204,7 @@ def main():
                 "type": "Point",
                 "coordinates": [pos["x"], pos["y"], pos["z"]],
             },
-            "properties": {
-                "type": tname,
-                "id": eid,
-                "name": sn or bn,
-                "base_name": bn,
-            },
+            "properties": props,
         })
 
     with open(args.dst, "w", encoding="utf-8") as f:

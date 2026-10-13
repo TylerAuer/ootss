@@ -83,7 +83,7 @@
     "activator": { "class": "fa fa-toggle-off", "color": "grey" },
     "gem_slot": { "class": "fa fa-inbox", "color": "grey" },
     "rock": { "class": "fa fa-gem", "color": "grey" },
-    "audiolog": { "class": "fa fa-volume", "color": "grey" },
+    "audiolog": { "class": "fa fa-volume", "color": "peru" },
     "teleport": { "class": "fa fa-certificate", "color": "steelblue" }
   },
 
@@ -92,7 +92,15 @@
     "match": {
       "type": {
         "regionMarker": { "group": "regions" },
-        "Level_Entry": { "group": "levels", "category": "level", "icon": "level" },
+        "Level_Entry": { 
+          "group": "levels", "icon": "level",
+          "match": {
+            "area": {
+              ".*": {}
+            }
+          }
+        
+        },
         "Area_Pin": { "group": "items", "category": "area", "icon": "map" },
         "Sign": { "group": "items", "category": "sign", "icon": "sign" },
         "Teleporter": { "group": "items", "category": "teleport", "icon": "teleport" },
@@ -102,7 +110,8 @@
         "Gem_Slot": { "group": "items", "category": "gem_slot", "icon": "gem_slot" },
         "Rock": { "group": "misc", "category": "rock", "icon": "rock" },
         "Voice_Log": { "group": "items", "category": "audiolog", "icon": "audiolog" },
-        "Gem": { "group": "items", "category": "gem", "icon": "gem" }
+        "Gem": { "group": "items", "category": "gem", "icon": "gem" },
+        ".*": { "group": "misc", "icon": "misc" }
       }
     }
   }
