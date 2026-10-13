@@ -47,15 +47,16 @@ def build_data(level_sets_dir):
 
     filtered, skipped = [], []
     for fp in level_set_files:
-        if fp.stem.lower().startswith('drafts'):
+        stem_lower = fp.stem.lower()
+        if stem_lower.startswith('drafts') or stem_lower == 'design_illustrations':
             skipped.append(fp.stem)
         else:
             filtered.append(fp)
 
     print(f"Found {len(level_set_files)} level_set files "
-          f"({len(filtered)} kept, {len(skipped)} skipped as drafts)\n")
+          f"({len(filtered)} kept, {len(skipped)} skipped)\n")
     if skipped:
-        print(f"Skipped drafts: {', '.join(skipped)}\n")
+        print(f"Skipped: {', '.join(skipped)}\n")
 
     for filepath in filtered:
         area = filepath.stem
@@ -105,7 +106,7 @@ def enrich_geojson(geojson_path, level_data):
     return geojson, matched, unmatched_names
 
 def main():
-    level_sets_dir = r"unpacked\data\level_sets"
+    level_sets_dir = r"D:\Projects\github\maps\submodules\ootss\scripts\unpacked\data\level_sets"
 
     cwd = Path.cwd()
     markers_path = cwd / "markers.geojson"
