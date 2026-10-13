@@ -11,6 +11,7 @@
             "urlTemplate": "tiles/Release_v1/{z}/{y}/{x}.webp",
             "tileSize": 512,
             "maxAvailableZoom": 5,
+            "size": [12450, 10956],
             "comment": "by qiekn, see #9"
           },
           {
@@ -19,6 +20,7 @@
             "urlTemplate": "tiles/Demo2_16k/{z}/{y}/{x}.webp",
             "tileSize": 512,
             "maxAvailableZoom": 5,
+            "size": [16384, 9216],
             "comment": "scaled 1920x1080 screenshot, 192x108 grid with center at cell 86,74 (real world center is 80,69 in game units)"
           },
           {
@@ -37,7 +39,6 @@
             "center": { "left": 89.5, "top": 75.5 }
           }
         ],
-
         "regions": [
           {
             "name": "default",

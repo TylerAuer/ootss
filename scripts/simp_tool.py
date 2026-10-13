@@ -203,24 +203,47 @@ def skip_unknown_value(diff, start):
             return position
 
 
+def _append_tail(members, diff, cursor, member=None):
+    """Record the remaining bytes as a raw blob so nothing is lost on truncation."""
+    entry = {"raw": diff[cursor:].hex()}
+    if member is not None:
+        entry["member"] = member
+    members.append(entry)
+
+
 def decode_diff(type_name, diff):
-    """Decode a record's diff into a list of member dicts."""
+    """Decode a record's diff into a list of member dicts.
+
+    Every read is bounds-checked; if a member is truncated (malformed diff,
+    trailing 0xFD, or a mis-parsed unknown member), the remaining bytes are
+    dumped as a single {"raw": ...} entry instead of raising struct.error.
+    """
     members = []
     cursor = 0
+    length = len(diff)
 
-    while cursor < len(diff):
+    while cursor < length:
         # The first member has no 0xFD marker; every later one does.
         if cursor == 0:
+            if cursor + 2 > length:
+                _append_tail(members, diff, cursor)
+                break
             member = read_u16(diff, 0)
             cursor = 2
         elif diff[cursor] == 0xFD:
+            if cursor + 3 > length:
+                _append_tail(members, diff, cursor)
+                break
             member = read_u16(diff, cursor + 1)
             cursor += 3
         else:
-            members.append({"raw": diff[cursor:].hex()})
+            _append_tail(members, diff, cursor)
             break
 
         if member in FLOAT_MEMBERS:
+            if cursor + 8 > length:
+                _append_tail(members, diff, cursor, member)
+                break
             members.append({
                 "member": member,
                 "prefix": diff[cursor:cursor + 4].hex(),
@@ -229,12 +252,22 @@ def decode_diff(type_name, diff):
             cursor += 8
 
         elif is_string_member(type_name, member):
-            length = read_u64(diff, cursor + 8)
-            text = diff[cursor + 16:cursor + 16 + length].decode("utf-8", "replace")
+            if cursor + 16 > length:
+                _append_tail(members, diff, cursor, member)
+                break
+            str_len = read_u64(diff, cursor + 8)
+            end = cursor + 16 + str_len
+            if end > length:
+                _append_tail(members, diff, cursor, member)
+                break
+            text = diff[cursor + 16:end].decode("utf-8", "replace")
             members.append({"member": member, "string": text})
-            cursor += 16 + length
+            cursor = end
 
         elif type_name == "Guy" and member == 0x1004:
+            if cursor + 8 > length:
+                _append_tail(members, diff, cursor, member)
+                break
             members.append({"member": member, "u32": read_u32(diff, cursor + 4)})
             cursor += 8
 
