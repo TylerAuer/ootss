@@ -20,7 +20,7 @@ const getArg = (name, def) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : def;
 };
-const IN_DIR     = path.resolve(getArg('--in',  '../../images/levels'));
+const IN_DIR     = path.resolve(getArg('--in',  '../../../images/levels'));
 const OUT_FILE   = path.resolve(getArg('--out', './index.json'));
 const CACHE_FILE = OUT_FILE + '.cache';
 const FORCE      = args.includes('--force');
