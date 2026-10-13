@@ -1,66 +1,108 @@
 {
-  "ootss": {
-    "name": "Order of the Sinking Star",
-    "size": 192,
-    "worlds": {
-      "default": {
-        "layers": [
-          {
-            "bounds": { "left": -77, "top": 221.5, "right": 219, "bottom": 74},
-            "name": "Release_v1",
-            "urlTemplate": "tiles/Release_v1/{z}/{y}/{x}.webp",
-            "tileSize": 512,
-            "maxAvailableZoom": 5,
-            "size": [12450, 10956],
-            "comment": "by qiekn, see #9"
-          },
-          {
-            "bounds": { "left": -6, "top": 185, "right": 186, "bottom": -7},
-            "name": "Demo2_16k",
-            "urlTemplate": "tiles/Demo2_16k/{z}/{y}/{x}.webp",
-            "tileSize": 512,
-            "maxAvailableZoom": 5,
-            "size": [16384, 9216],
-            "comment": "scaled 1920x1080 screenshot, 192x108 grid with center at cell 86,74 (real world center is 80,69 in game units)"
-          },
-          {
-            "name": "overworld_2160p",
-            "bounds": {"left": -65, "top": 157, "right": 223, "bottom": -5},
-            "url": "images/overworld_2160p.jpg",
-            "overlay": true,
-            "size": [3840, 2160],
-            "remap": { "cellSize": 13.34, "dx": -65, "dy": -5 }
+  "name": "Order of the Sinking Star",
+  "size": 192,
+  "worlds": {
+    "default": {
+      "layers": [
+        {
+          "bounds": { "left": -77, "top": 221.5, "right": 219, "bottom": 74},
+          "name": "Release_v1",
+          "urlTemplate": "tiles/Release_v1/{z}/{y}/{x}.webp",
+          "tileSize": 512,
+          "maxAvailableZoom": 5,
+          "size": [12450, 10956],
+          "comment": "by qiekn, see #9"
+        },
+        {
+          "bounds": { "left": -6, "top": 185, "right": 186, "bottom": -7},
+          "name": "Demo2_16k",
+          "urlTemplate": "tiles/Demo2_16k/{z}/{y}/{x}.webp",
+          "tileSize": 512,
+          "maxAvailableZoom": 5,
+          "size": [16384, 9216],
+          "comment": "scaled 1920x1080 screenshot, 192x108 grid with center at cell 86,74 (real world center is 80,69 in game units)"
+        },
+        {
+          "name": "overworld_2160p",
+          "bounds": {"left": -65, "top": 157, "right": 223, "bottom": -5},
+          "url": "images/overworld_2160p.jpg",
+          "overlay": true,
+          "size": [3840, 2160],
+          "remap": { "cellSize": 13.34, "dx": -65, "dy": -5 }
+        }
+      ],
+      "grid": [
+        {
+          "name": "default_grid",
+          "bounds": { "left": 81.5, "top": -15.5, "right":241.5, "bottom": 166.5},
+          "center": { "left": 89.5, "top": 75.5 }
+        }
+      ],
+      "markers": {
+        "url": "scripts/markers.geojson"
+      },
+      "regions": [
+        {
+          "name": "default",
+          "image": "scripts/regions.png",
+          "url": "scripts/regions.json",
+          "size": 192,
+          "simplify": "100%",
+          "dx": -5.5,
+          "dy": -7.5,
+          "flip_y": true,
+          "colors": {
+            "#000000": "center",
+            "#ffff00": "crossroads",
+            "#0000ff": "promesst",
+            "#ffa500": "mirror",
+            "#ff0000": "heroes1",
+            "#00ff00": "heroes2",
+            "#ff00ff": "heroes3",
+            "#00ffff": "water"
           }
-        ],
-        "grid": [
-          {
-            "name": "default_grid",
-            "bounds": { "left": 81.5, "top": -15.5, "right":241.5, "bottom": 166.5},
-            "center": { "left": 89.5, "top": 75.5 }
-          }
-        ],
-        "regions": [
-          {
-            "name": "default",
-            "image": "scripts/regions.png",
-            "url": "scripts/regions.json",
-            "size": 192,
-            "simplify": "100%",
-            "dx": -5.5,
-            "dy": -7.5,
-            "flip_y": true,
-            "colors": {
-              "#000000": "center",
-              "#ffff00": "crossroads",
-              "#0000ff": "promesst",
-              "#ffa500": "mirror",
-              "#ff0000": "heroes1",
-              "#00ff00": "heroes2",
-              "#ff00ff": "heroes3",
-              "#00ffff": "water"
-            }
-          }
-        ]
+        }
+      ]
+    }
+  },
+
+  "groups": {
+    "items": { "default": true },
+    "levels": { "default": true },
+    "regions": { },
+    "misc": { }
+  },
+
+  "icons": {
+    "gem": { "class": "fa fa-gem", "color": "slateblue" },
+    "map": { "class": "fa fa-compass", "color": "deepskyblue" },
+    "level": { "class": "fa fa-bahai", "color": "darkorange" },
+    "sign": { "class": "fa fa-receipt", "color": "slategrey" },
+    "spawner": { "class": "fa fa-gift", "color": "darkcyan" },
+    "monster": { "class": "fa fa-dragon", "color": "green" },
+    "activator": { "class": "fa fa-toggle-off", "color": "grey" },
+    "gem_slot": { "class": "fa fa-inbox", "color": "grey" },
+    "rock": { "class": "fa fa-gem", "color": "grey" },
+    "audiolog": { "class": "fa fa-volume", "color": "grey" },
+    "teleport": { "class": "fa fa-certificate", "color": "steelblue" }
+  },
+
+  "types": {
+    "group": "misc",
+    "match": {
+      "type": {
+        "regionMarker": { "group": "regions" },
+        "Level_Entry": { "group": "levels", "category": "level", "icon": "level" },
+        "Area_Pin": { "group": "items", "category": "area", "icon": "map" },
+        "Sign": { "group": "items", "category": "sign", "icon": "sign" },
+        "Teleporter": { "group": "items", "category": "teleport", "icon": "teleport" },
+        "Spawner": { "group": "misc", "category": "spawner", "icon": "spawner" },
+        "Monster":  { "group": "items", "category": "monster", "icon": "monster" },
+        "Activator": { "group": "misc", "category": "activator", "icon": "activator" },
+        "Gem_Slot": { "group": "items", "category": "gem_slot", "icon": "gem_slot" },
+        "Rock": { "group": "misc", "category": "rock", "icon": "rock" },
+        "Voice_Log": { "group": "items", "category": "audiolog", "icon": "audiolog" },
+        "Gem": { "group": "items", "category": "gem", "icon": "gem" }
       }
     }
   }
