@@ -4,7 +4,6 @@ for /f "usebackq delims=" %%a in (".env") do set %%a
 
 set package=%GAME_DIR%\data\levels.package
 set out=%EXPORT_DIR%
-
 set exe=%GAME_DIR%\sinking_star.exe
 set ent=%EXPORT_DIR%\entities_out
 

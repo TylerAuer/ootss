@@ -68,6 +68,18 @@ examples:
   Export the level entries of the overworld as GeoJSON markers:
     python simp_tool.py markers levels.package --entities overworld.entities --output level_entries.geojson
 
+  Export only Level_Entry and Mirror entities (whitelist):
+    python simp_tool.py markers levels.package --entities overworld.entities Level_Entry Mirror
+
+  Export everything except Inanimate and Fence (blacklist):
+    python simp_tool.py markers levels.package --entities overworld.entities --exclude Inanimate Fence
+
+  Whitelist then remove some:
+    python simp_tool.py markers levels.package --entities overworld.entities Monster Fence --exclude Fence
+
+  Export with all entity properties nested under properties.entity_properties:
+    python simp_tool.py markers levels.package --entities overworld.entities --entity-properties
+
   Collect markers from several sources (repeat the option; entry name or file path):
     python simp_tool.py markers levels.package --entities overworld.entities --entities D:\\maps\\custom.entities
 
@@ -567,44 +579,142 @@ def pick_area(set_names):
     return next((s for s in set_names if s not in GENERIC_LEVEL_SETS and 'drafts' not in s), "UNDEFINED")
 
 
-def read_level_entries(entries, sources):
-    """Return a list of dicts (level name, x, y, z) from every given .entities source."""
+def _json_safe(value):
+    """Make a decoded value safe for JSON serialization."""
+    if isinstance(value, bytes):
+        return value.hex()
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float, str)) or value is None:
+        return value
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    return str(value)
+
+
+def _all_empty_strings(value):
+    """True if value is a list whose elements are all empty strings (recursively for nested lists)."""
+    if not isinstance(value, list) or not value:
+        return False
+    for v in value:
+        if isinstance(v, list):
+            if not _all_empty_strings(v):
+                return False
+        elif v != "":
+            return False
+    return True
+
+
+def _nest_dotted(flat):
+    """Turn {'position.x': 1, 'position.y': 2, 'a.b.c': 3} into nested dicts.
+
+    Order is preserved: the first time a prefix appears, a dict is created; later
+    dotted keys extend it. A collision between a scalar and a dict at the same key
+    keeps the scalar (drops the later dict).
+    """
+    root = {}
+    for key, value in flat.items():
+        parts = key.split(".")
+        node = root
+        for part in parts[:-1]:
+            nxt = node.get(part)
+            if not isinstance(nxt, dict):
+                # overwrite non-dict (rare); keeps later nested fields working
+                nxt = {}
+                node[part] = nxt
+            node = nxt
+        leaf = parts[-1]
+        if leaf not in node or not isinstance(node[leaf], dict):
+            node[leaf] = value
+    return root
+
+
+def read_level_entries(entries, sources, include_types=None, exclude_types=None,
+                       entity_properties=False):
+    """Return a list of dicts with decoded properties from every given .entities source.
+
+    include_types: if non-empty, only entities whose type is in this set are kept.
+    exclude_types: entities whose type is in this set are dropped (applied after include).
+    entity_properties: if True, decode every named member into a "properties" dict
+        (with arrays of all-empty-strings dropped, and dotted names nested).
+    """
+    include_types = {t.lower() for t in include_types} if include_types else None
+    exclude_types = {t.lower() for t in exclude_types} if exclude_types else None
+
     result = []
     for source in sources:
         data = load_entities_source(entries, source)
-        for _, type_name, diff, version in parse_entities(data):
-            if type_name != "Level_Entry":
+        for entity_id, type_name, diff, version in parse_entities(data):
+            tname = type_name.lower()
+            if include_types and tname not in include_types:
+                continue
+            if exclude_types and tname in exclude_types:
                 continue
 
             # Diffs only store non-default values, so a missing coordinate is 0.
             position = {"x": 0.0, "y": 0.0, "z": 0.0}
             level_name = None
+            properties = {}
+
             for member in decode_diff(type_name, diff, version):
                 name = member.get("name")
+                if name is None:
+                    continue
+
+                # Track position and level_name for geometry / area lookup
                 if name in POSITION_FIELDS:
                     position[POSITION_FIELDS[name]] = member["value"]
                 elif name == LEVEL_NAME_FIELD:
                     level_name = member["value"]
 
-            result.append({"level": level_name, **position})
+                if entity_properties:
+                    value = member.get("label") or member["value"]
+                    value = _json_safe(value)
+                    # Drop arrays whose elements are all empty strings (e.g. materials: ["", "", ""])
+                    if _all_empty_strings(value):
+                        continue
+                    properties[name] = value
+
+            entry = {"id": entity_id, "type": type_name, "level": level_name, **position}
+            if entity_properties:
+                entry["properties"] = properties
+            result.append(entry)
     return result
 
 
-def build_geojson(level_entries, areas):
+def build_geojson(level_entries, areas, entity_properties=False):
     features = []
-    for entry in sorted(level_entries, key=lambda e: e["level"] or ""):
+    for entry in sorted(level_entries, key=lambda e: (e["type"], e["level"] or "")):
         set_names = areas.get((entry["level"] or "").lower(), [])
+
+        # id is always present
+        props = {
+            "type": entry["type"],
+            "id": entry["id"],
+        }
+
+        # name only when the entity actually has one
+        if entry["level"]:
+            props["name"] = entry["level"]
+
+        # area only when known
+        area = pick_area(set_names)
+        if area is not None:
+            props["area"] = area
+
+        # All entity fields go under entity_properties (nested by dotted name)
+        if entity_properties:
+            props["entity_properties"] = _nest_dotted(entry.get("properties", {}))
+
         features.append({
             "type": "Feature",
             "geometry": {
                 "type": "Point",
                 "coordinates": [entry["x"], entry["y"], entry["z"]],
             },
-            "properties": {
-                "type": "level",
-                "name": entry["level"],
-                "area": pick_area(set_names),
-            },
+            "properties": props,
         })
     return {"type": "FeatureCollection", "features": features}
 
@@ -1234,15 +1344,26 @@ def command_markers(args):
     entries = load_source(args.source)
     sources = args.entities
 
-    level_entries = read_level_entries(entries, sources)
+    level_entries = read_level_entries(entries, sources,
+                                       include_types=args.types,
+                                       exclude_types=args.exclude,
+                                       entity_properties=args.entity_properties)
     areas = read_level_areas(entries)
 
     with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(build_geojson(level_entries, areas), f, indent=2, ensure_ascii=False)
+        json.dump(build_geojson(level_entries, areas,
+                                entity_properties=args.entity_properties),
+                  f, indent=2, ensure_ascii=False)
 
     without_area = [e["level"] for e in level_entries
-                    if not areas.get((e["level"] or "").lower())]
+                    if e["level"] and not areas.get(e["level"].lower())]
     print(f"Wrote {len(level_entries)} level entries from {len(sources)} source(s) to {args.output}")
+    if args.types:
+        print(f"Included types: {', '.join(args.types)}")
+    if args.exclude:
+        print(f"Excluded types: {', '.join(args.exclude)}")
+    if args.entity_properties:
+        print("Included entity properties under 'entity_properties'")
     if without_area:
         print(f"{len(without_area)} without an area (not in any level set): "
               + ", ".join(str(n) for n in without_area))
@@ -1371,18 +1492,27 @@ def build_parser():
                      help="folder for dumped files (default: %(default)s)")
     add_schema_options(sub)
 
-    sub = add_command(commands, "markers", "export level entries as GeoJSON points",
+    sub = add_command(commands, "markers", "export entities as GeoJSON points",
                       "python simp_tool.py markers levels.package "
                       "--entities overworld.entities --output level_entries.geojson",
                       command_markers)
     sub.add_argument("source", metavar="PACKAGE", help="path to levels.package")
     sub.add_argument("--entities", metavar="SOURCE", action="append", required=True,
-                     help="an .entities source to collect Level_Entry markers from: an "
+                     help="an .entities source to collect markers from: an "
                           "entry name inside the package (e.g. overworld.entities) or a "
                           "file path on disk. Required; repeat the option for several "
                           "sources")
     sub.add_argument("--output", metavar="FILE", default="level_entries.geojson",
                      help="GeoJSON file to write (default: %(default)s)")
+    sub.add_argument("types", nargs="*", metavar="Type",
+                     help="entity types to include (whitelist). If none given, all types "
+                          "are considered unless --exclude is used. Example: Level_Entry Mirror")
+    sub.add_argument("-x", "--exclude", action="append", default=[], metavar="Type",
+                     help="entity type to exclude (repeatable). Applied after the whitelist")
+    sub.add_argument("--entity-properties", action="store_true",
+                     help="include every decoded entity member under properties.entity_properties "
+                          "(arrays whose elements are all empty strings are dropped, "
+                          "dotted names are nested)")
     add_schema_options(sub)
 
     sub = add_command(commands, "schema", "read the Type_Info from the game exe and save it as a JSON schema",
@@ -1432,4 +1562,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
