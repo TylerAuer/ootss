@@ -2,6 +2,8 @@ import json
 import re
 from pathlib import Path
 from collections import defaultdict
+import argparse
+from pathlib import Path
 
 def strip_inline_comment(line):
     if '#' in line:
@@ -105,13 +107,48 @@ def enrich_geojson(geojson_path, level_data):
 
     return geojson, matched, unmatched_names
 
-def main():
-    level_sets_dir = r"D:\Projects\github\maps\submodules\ootss\scripts\unpacked\data\level_sets"
+import argparse
+from pathlib import Path
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Build level prerequisites and enrich a markers GeoJSON file."
+    )
+    parser.add_argument(
+        "level_sets_dir",
+        type=Path,
+        help="Directory containing unpacked level set data.",
+    )
+    parser.add_argument(
+        "-m", "--markers",
+        type=Path,
+        default=None,
+        help="Path to input markers GeoJSON (default: ./markers.geojson).",
+    )
+    parser.add_argument(
+        "-p", "--prereqs",
+        type=Path,
+        default=None,
+        help="Path to output level prerequisites JSON (default: ./level_prerequisites.json).",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=None,
+        help="Path to output enriched GeoJSON (default: ./markers_enriched.geojson).",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    level_sets_dir = args.level_sets_dir
     cwd = Path.cwd()
-    markers_path = cwd / "markers.geojson"
-    prereqs_path = cwd / "level_prerequisites.json"
-    output_path = cwd / "markers_enriched.geojson"
+    markers_path = args.markers or (cwd / "markers.geojson")
+    prereqs_path = args.prereqs or (cwd / "level_prerequisites.json")
+    output_path = args.output or (cwd / "markers_enriched.geojson")
 
     print(f"Scanning: {level_sets_dir}\n")
     all_levels, with_parents = build_data(level_sets_dir)
@@ -144,6 +181,7 @@ def main():
 
     print(f"\nSaved enriched GeoJSON to:")
     print(f"  {output_path}")
+
 
 if __name__ == "__main__":
     main()
