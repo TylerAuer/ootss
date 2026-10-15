@@ -626,10 +626,45 @@ function toggleGallery() {
     document.activeElement.blur();
   }
   document.getElementById('galleryOverlay').classList.toggle('open');
+  if (isGalleryOpen() && mainSwiper) {
+    requestAnimationFrame(() => {
+      mainSwiper.update()
+      thumbSwiper.update()
+      updateCaption()
+      lazyLoad()
+    })
+  }
 }
 
 function closeGallery() {
   document.getElementById('galleryOverlay').classList.remove('open');
+}
+
+//----------------------------------------
+// lazy loading for gallery images (no IntersectionObserver, works on file:// too)
+// images carry data-src, real src is set only for slides near the active/visible ones
+
+function loadSlides(slides, from, to) {
+  for (let i = Math.max(0, from); i <= Math.min(slides.length - 1, to); i++) {
+    const img = slides[i].querySelector('img[data-src]');
+    if (img) {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+    }
+  }
+}
+
+function lazyLoad() {
+  if (!mainSwiper || !thumbSwiper || !isGalleryOpen()) return;
+  const a = mainSwiper.activeIndex;
+  loadSlides(mainSwiper.slides, a - 2, a + 2); // current image first, then neighbours
+
+  let lo = Infinity, hi = -1;
+  thumbSwiper.slides.forEach((s, i) => {
+    if (s.classList.contains('swiper-slide-visible')) { lo = Math.min(lo, i); hi = Math.max(hi, i); }
+  });
+  if (hi < 0) lo = hi = a;
+  loadSlides(thumbSwiper.slides, lo - 8, hi + 8);
 }
 
 function openGallery(name) {
@@ -644,6 +679,7 @@ function openGallery(name) {
       thumbSwiper.slideTo(index, 0)
     }
     updateCaption()
+    lazyLoad()
   })
 }
 
@@ -656,12 +692,12 @@ function initImages() {
   for (const item of images) {
     main.insertAdjacentHTML('beforeend',
       `<div class="swiper-slide">
-        <img class="slide-bg" src="${item.src}">
+        <img class="slide-bg" data-src="${item.src}" alt="" decoding="async">
       </div>`
     )
     thumbs.insertAdjacentHTML('beforeend',
       `<div class="swiper-slide" title="${item.title} (${item.area})">
-        <img class="slide-bg" style="background-image: url('${item.src}">
+        <img class="slide-bg" data-src="${item.src}" alt="" decoding="async">
       </div>`
     )
   }
@@ -722,7 +758,11 @@ function initImages() {
   mainSwiper.on('slideChange', () => {
     updateCaption()
     thumbSwiper.slideTo(mainSwiper.activeIndex)
+    lazyLoad()
   })
+
+  thumbSwiper.on('setTranslate', lazyLoad)
+  thumbSwiper.on('transitionEnd', lazyLoad)
 
   closeBtn.onclick = closeGallery
 
