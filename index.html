@@ -479,6 +479,7 @@ let polygonLayer = null;
 
 let solutions = {};
 let youtube = {};
+let wt = {};
 let imageList = {};
 let order = {};
 
@@ -968,7 +969,13 @@ function openPopup(e) {
   let player = youtube[o.name] ? `<a href="${youtube[o.name]}" target=_blank>YouTube</a>&nbsp;` : (sol ? `<a href="${getSolutionPlayerLink(o.name, true)}" target=_blank>Solution&nbsp;Player</a>&nbsp;`:'');
   let moves = sol ? `<span class="wrap">(${getMovesCount(sol)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(sol)}</span></span>`:'';
 
-  let content = `${header}${image}${player}${moves}`;
+  let wtl ='';
+  const p = wt[o.name];
+  if (p) {
+    wtl = `&nbsp;/&nbsp;<a href="https://sinkingstar.wikitactics.com/areas/${p[0]}/#${p[1]}" target=_blank>WikiTactics</a>`;
+  }
+
+  let content = `${header}${image}${player}${moves}${wtl}`;
 
   marker.unbindPopup();
   marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
@@ -1499,15 +1506,17 @@ window.onload = function() {
     'data/youtube.txt',
     'data/images.txt',
     'data/order.txt',
+    'data/wt.txt',
   ].map(url=>fetch(url).then(r=>r.text()));
 
   Promise.all(promises).then(data => {
-    let [sol, yt, img, ord] = data;
+    let [sol, yt, img, ord, wtd] = data;
 
     solutions = Object.fromEntries(sol.split('\n').map(s => s.trim().split(':', 2)).filter(([, v])=> v && v.length>=2));
     youtube = Object.fromEntries(yt.split('\n').map(s => s.trim().split(',', 2)).filter(([, v])=> v && v.length>=2));
     imageList = Object.fromEntries(img.split('\n').map(s => s.trim()).filter(Boolean).map(s => [s.replace(/\.[^.]+$/, ''), true]));
     order = Object.fromEntries(ord.split('\n').map(s => s.trim()).filter(Boolean).map((s, i) => [s, i]));
+    wt = Object.fromEntries(wtd.trim().split('\n').map(s => { const [n,a,i] = s.trim().split(','); return [n, [a,i]]; }));
 
     fetch('data/regions.json').then(r=>r.json()).then(data=>{
       regionData = data;
