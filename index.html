@@ -969,13 +969,16 @@ function openPopup(e) {
   let player = youtube[o.name] ? `<a href="${youtube[o.name]}" target=_blank>YouTube</a>&nbsp;` : (sol ? `<a href="${getSolutionPlayerLink(o.name, true)}" target=_blank>Solution&nbsp;Player</a>&nbsp;`:'');
   let moves = sol ? `<span class="wrap">(${getMovesCount(sol)}):&nbsp<span class="copyable" title="Click to copy solution to clipboard">${convertSolution(sol)}</span></span>`:'';
 
-  let wtl ='';
+  let content = `${header}${image}`;
+  let footer = `${player}${moves}`;
+
   const p = wt[o.name];
   if (p) {
-    wtl = `&nbsp;<a href="https://sinkingstar.wikitactics.com/areas/${p[0]}/#${p[1]}" target=_blank>WikiTactics</a>`;
+    if (footer!='') footer += '&nbsp;/&nbsp;';
+    footer += `<a href="https://sinkingstar.wikitactics.com/areas/${p[0]}/#${p[1]}" target=_blank>WikiTactics</a>`;
   }
 
-  let content = `${header}${image}${player}${moves}${wtl}`;
+  content += footer;
 
   marker.unbindPopup();
   marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
