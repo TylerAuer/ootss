@@ -14,3 +14,4 @@ promesst2_streamlined,https://youtu.be/muybNLun_ho
 indirect_skip,https://youtu.be/-0IwiTXvRQw
 druids_stone_alt,https://youtu.be/RiJ2El-blNY?t=1121
 skip_or_sink_r,https://youtu.be/CF-28syQ0uE
+skip_wand_v6,https://youtu.be/7123p25u0zg?t=3117
