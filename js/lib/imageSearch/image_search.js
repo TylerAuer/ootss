@@ -302,7 +302,8 @@ function initImageSearch(cb, idx) {
       e.preventDefault();
       handleFile(file);
     } else {
-      console.log('Clipboard does not contain an image');
+      //console.log('Clipboard does not contain an image');
+      imageCB([]);
     }
   });
 }

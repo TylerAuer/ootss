@@ -762,6 +762,15 @@ function updateZoom() {
 
 }
 
+function showAlert(textContent) {
+  const alert = document.getElementById('alert');
+  if (alert) {
+    alert.textContent = textContent;
+    alert.classList.remove('closed');
+    setTimeout(function(e){ document.getElementById('alert').classList.add('closed') },1500);
+  }
+}
+
 function copyToClipboard(text) {
   let input = document.body.appendChild(document.createElement("input"));
   input.value = text;
@@ -771,8 +780,7 @@ function copyToClipboard(text) {
   document.execCommand('copy');
   input.parentNode.removeChild(input);
   if (prev) prev.focus();
-  document.getElementById('alert').classList.remove('closed');
-  setTimeout(function(e){ document.getElementById('alert').classList.add('closed') },1500);
+  showAlert('Copied To Clipboard');
 }
 
 function getBaseURL() {
@@ -1509,16 +1517,15 @@ window.onload = function() {
   });
 
   initImageSearch(matches=>{
-    console.log('---', matches);
-
     if (matches && matches.length>0) {
       let name = matches[0].name;
       name = name.replaceAll('.webp','');
       if (name) {
         focusMarkerByName(name);
       }
+    } else {
+      showAlert('Image Not Found');
     }
-
   });
 
 }
