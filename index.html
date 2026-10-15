@@ -1518,6 +1518,7 @@ window.onload = function() {
 
   initImageSearch(matches=>{
     if (matches && matches.length>0) {
+      console.log('matches', matches);
       let name = matches[0].name;
       name = name.replaceAll('.webp','');
       if (name) {

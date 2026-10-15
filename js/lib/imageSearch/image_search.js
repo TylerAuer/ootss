@@ -148,10 +148,13 @@ async function search(img) {
   return { matches, best, rejected: false };
 }
 
-function setStatus(msg) { statusEl.textContent = msg || ''; }
+function setStatus(msg) { console.log(msg); }
 
 async function handleFile(file) {
-  if (!file) return;
+  if (!file) {
+    return;
+  }
+
   if (!file.type.startsWith('image/')) {
     setStatus('Not an image: ' + (file.type || 'unknown type'));
     return;
@@ -163,9 +166,7 @@ async function handleFile(file) {
   try {
     const img = await loadImageFromFile(file);
     const { matches, best, rejected } = await search(img);
-
     renderResults(matches, best, rejected);
-
   } catch (err) {
     console.error(err);
   }
@@ -173,6 +174,7 @@ async function handleFile(file) {
 
 function renderResults(matches, best, rejected) {
   if (rejected || !matches.length) {
+    imageCB([]);
     return;
   }
 
@@ -302,6 +304,7 @@ function initImageSearch(cb, idx) {
       e.preventDefault();
       handleFile(file);
     } else {
+      console.log('image not found');
       //console.log('Clipboard does not contain an image');
       imageCB([]);
     }
