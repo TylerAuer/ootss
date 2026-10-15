@@ -13,3 +13,4 @@ worlds_collide_heroes_and_promesst_v4,https://youtu.be/_ABlo8IKVVg
 promesst2_streamlined,https://youtu.be/muybNLun_ho
 indirect_skip,https://youtu.be/-0IwiTXvRQw
 druids_stone_alt,https://youtu.be/RiJ2El-blNY?t=1121
+skip_or_sink_r,https://youtu.be/CF-28syQ0uE
