@@ -1018,6 +1018,9 @@ function openPopup(e) {
     footer += `<a href="https://sinkingstar.wikitactics.com/areas/${p[0]}/#${p[1]}" target=_blank>WikiTactics</a>`;
   }
 
+  if (footer!='') footer += '&nbsp;/&nbsp;';
+  footer += `<a href="https://github.com/qiekn/ootss-cmd" target=_blank>ootss-cmd</a>`;
+
   content += footer;
 
   marker.unbindPopup();
