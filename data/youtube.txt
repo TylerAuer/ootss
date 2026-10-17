@@ -16,3 +16,5 @@ druids_stone_alt,https://youtu.be/RiJ2El-blNY?t=1121
 skip_or_sink_r,https://youtu.be/CF-28syQ0uE
 skip_wand_v6,https://youtu.be/7123p25u0zg?t=3117
 skipping_stones,https://youtu.be/ZcFo2cn_8Hk
+endpoint_gates,https://youtu.be/6YxAXZoA4eE
+indirect_skip_3,https://youtu.be/-zSGRTRgM2k
