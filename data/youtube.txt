@@ -18,3 +18,4 @@ skip_wand_v6,https://youtu.be/7123p25u0zg?t=3117
 skipping_stones,https://youtu.be/ZcFo2cn_8Hk
 endpoint_gates,https://youtu.be/6YxAXZoA4eE
 indirect_skip_3,https://youtu.be/-zSGRTRgM2k
+mirror_promesst,https://youtu.be/7NE7Fs5ZgKU
