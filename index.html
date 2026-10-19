@@ -818,24 +818,7 @@ function initImages() {
 }
 
 
-
 //----------------------------------------
-
-function updateZoom() {
-
-  const currentZoom = map.getZoom();
-  const showLabels = currentZoom >= 5; // Adjust threshold as needed
-
-  document.querySelectorAll('.marker-label').forEach(label => {
-    label.style.display = showLabels ? 'block' : 'none';
-    //label.style.fontSize = (currentZoom*3) + 'px';
-  });
-
-  document.querySelectorAll('.region-label').forEach(label => {
-    //label.style.display = showLabels ? 'block' : 'none';
-    label.style.fontSize = Math.max(18, currentZoom*8) + 'px';
-  });
-}
 
 function showAlert(textContent) {
   const alert = document.getElementById('alert');
@@ -1007,23 +990,37 @@ function updateCRS(provider) {
   map._resetView(center, zoom);
 }
 
-function baseLayerChange(name) {
-  updateCRS(name);
+function updateLabels() {
 
+  const currentZoom = map.getZoom();
+  const showLabels = currentZoom >= 5; // Adjust threshold as needed
 
+  document.querySelectorAll('.marker-label').forEach(label => {
+    label.style.display = showLabels ? 'block' : 'none';
+    //label.style.fontSize = (currentZoom*3) + 'px';
+  });
+
+  document.querySelectorAll('.region-label').forEach(label => {
+    //label.style.display = showLabels ? 'block' : 'none';
+    label.style.fontSize = Math.min(26, Math.max(18, currentZoom*12)) + 'px';
+  });
+
+  let name = baseLayerName;
   map.eachLayer(function(marker) {
     if (marker?.feature?.properties.type == 'Area_Pin') {
       const [x,y,z] = marker.feature.geometry.coordinates;
-
-      let base= name.replace('_64k','');
-
+      let base = name.replace('_64k','');
       if (heightRanges[base]) {
         const [a,b] = heightRanges[base];
         marker._icon.style.visibility = (z>=a && z<=b) ? 'visible' : 'hidden';
       }
     }
   })
+}
 
+function baseLayerChange(name) {
+  baseLayerName = name;
+  updateCRS(name);
 }
 
 const getCoordinates = marker => marker.feature.geometry.coordinates.map(String).join(',');
@@ -1143,6 +1140,7 @@ function drawMap() {
 
   map.on('overlayadd', function(e) {
     settings.activeLayers[e.layer.id] = true;
+    updateLabels();
     saveSettings();
   });
 
@@ -1457,9 +1455,9 @@ function drawMap() {
 
     let layercontrol = L.control.layers(baseLayers, overlaysWithCounts, {collapsed: true, position: 'bottomleft'}).addTo(map);
 
-    map.on('zoom overlayadd', updateZoom);
+    map.on('zoom overlayadd', updateLabels);
 
-    updateZoom();
+    updateLabels();
 
     searchControl = new L.Control.Search({propertyName: 'searchText', initial: false, layer: markerGroup, hideMarkerOnCollapse: true}).addTo(map);
 
