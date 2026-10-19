@@ -1024,6 +1024,7 @@ function updateLabels() {
 
 function baseLayerChange(name) {
   baseLayerName = name;
+  updateLabels();
   updateCRS(name);
 }
 
@@ -1418,7 +1419,7 @@ function drawMap() {
 
     for (const [k,v] of Object.entries(layers)) {
       if (settings.activeLayers[k]) {
-        v.addTo(map);
+        v.addTo(markerGroup);
       }
     }
 
