@@ -83,7 +83,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 .region-label {
   font-size: 32px;
   color: white;
-  text-shadow: 1px 1px 8px black;
+  text-shadow: 2px 2px 8px black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -895,6 +895,15 @@ function getCentroidRaw2(points) {
 
 let config = {
   Release_v1: { bounds: {left: -77, top: 221.5, right: 219, bottom: 74 } },
+  overworld_64k: {"bounds": { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5} },
+  sky_64k: {"bounds": { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5} },
+  underworld_64k: {"bounds": { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5} }
+}
+
+let heightRanges = {
+  overworld: [-4,10],
+  sky: [10, 75],
+  underworld: [-57,-4],
 }
 
 function getCRS(name) {
@@ -903,12 +912,12 @@ function getCRS(name) {
   // so basically an overhead screenshot is 192x108 grid
   // with grid center at cell 86,74 if count from top left corner
 
-  let d = 192;
+  let d = 190;
 
   let m = {
     size: d,
-    bounds: [[0,0],[192,192]],
-    center: [90,-89],
+    bounds: [[0,0],[190,190]],
+    center: [0,0],
     flip_y: true,
   }
 
@@ -916,8 +925,10 @@ function getCRS(name) {
   if (b) {
     let dd = b.right-b.left;
     m.size = dd;
-    m.bounds = [[0,0],[dd,dd]];
-    m.center = [71, -73.5];
+    //m.bounds = [[0,0],[dd,dd]];
+    //m.center = [-b.top,-b.left];
+    m.bounds = [[b.left,b.top],[b.right,b.bottom]];
+    m.center = [b.left + (b.right-b.left)/2, -(b.top+(b.bottom-b.top)/2)+0.5]
   }
 
 
@@ -1032,43 +1043,54 @@ function openPopup(e) {
 
 function drawMap() {
 
+  let tileset_base = location.protocol === 'file:' ? '../ootss_tileset' : 'https://joric.github.io/ootss_tileset';
+
   let baseLayers={}
 
-  var blankTileLayer = L.tileLayer('https://via.placeholder.com/1x1/000000/ffffff?text=blank', {
-      attribution: 'Blank Map'
-  });
+  for (const name of ['overworld','sky','underworld']) {
+    baseLayers[`${name}_64k`] = L.tileLayer(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
+      tileSize: 512,
+      maxNativeZoom: 7,
+      attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
+    });
+  }
 
-  baseLayers['blank'] = blankTileLayer;
+  let baseLayer = Object.values(baseLayers)[0]
 
-  let tilesLayer = L.tileLayer('tiles/Demo2_16k/{z}/{y}/{x}.webp', {
-    tileSize: 512,
-    maxNativeZoom: 5,
-    attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
-  });
+  if (!settings.activeLayers) {
+    settings.activeLayers = {'overworld_64k':true, 'overworld':true};
+  }
 
-  baseLayers['Demo2_16k'] = tilesLayer;
+  let crs = L.CRS.Simple;
 
-  let tilesLayer2 = L.tileLayer('tiles/Release_v1/{z}/{y}/{x}.webp', {
-    tileSize: 512,
-    maxNativeZoom: 5,
-    attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
-  });
+  for (const [k,v] of Object.entries(baseLayers)) {
+    if (settings.activeLayers[k]) {
+      crs = getCRS(k);
+    }
+  }
 
-  baseLayers['Release_v1'] = tilesLayer2;
-
-  let crs = getCRS('Release_v1');
 
   map = L.map('map', {
     crs: crs.crs,
     zoom: 3.5,
     center: crs.center,
     zoomControl: false,
-    maxZoom: 8,
+    maxZoom: 7,
     renderer: L.canvas({ padding: 0.5 }),
-
     zoomSnap: 0.5,
     //zoomDelta: 0.5,
     //wheelPxPerZoomLevel: 100,
+  });
+
+
+  map.on('overlayadd', function(e) {
+    settings.activeLayers[e.layer.id] = true;
+    saveSettings();
+  });
+
+  map.on('overlayremove', function(e) {
+    delete settings.activeLayers[e.layer.id];
+    saveSettings();
   });
 
   map.on('baselayerchange', function(e) {
@@ -1085,8 +1107,11 @@ function drawMap() {
     saveSettings();
   });
 
-
-  tilesLayer2.addTo(map);
+  for (const [k,v] of Object.entries(baseLayers)) {
+    if (settings.activeLayers[k]) {
+      v.addTo(map);
+    }
+  }
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -1162,6 +1187,7 @@ function drawMap() {
     layers['overworld1'] = imageLayer2;
     */
 
+    /*
     let imageLayer3 = L.imageOverlay('images/overworld_2160p.jpg', getImageBounds(13.34, 3840, 2160, -65, -5 ),{
       attribution: '<a href="https://youtu.be/4m8R1BjjioU?t=90" target=_blank>YouTube</a>',
       //opacity: 0.5,
@@ -1169,7 +1195,7 @@ function drawMap() {
 
 
     layers['overworld'] = imageLayer3;
-
+    */
 
     //imageLayer3.addTo(map);
 
@@ -1221,10 +1247,7 @@ function drawMap() {
     //gridLayer.addTo(map);
 
     layers['grid'] = gridLayer;
-
-
     layers['polygons'] = polygonLayer;
-
     layers['regions'] = regionLayer;
 
     //regionLayer.addTo(map);
@@ -1253,6 +1276,8 @@ function drawMap() {
         images.push( {src: `images/levels/${name}.webp`, name: name, area: area, title: title});
       }
 
+      let [x,y,z] = feature.geometry.coordinates;
+
       let latlng = [feature.geometry.coordinates[1],feature.geometry.coordinates[0]];
 
       if (!latlng) continue;
@@ -1279,22 +1304,42 @@ function drawMap() {
 
       marker.on('click', openPopup);
 
+      /*
       let group = feature.properties.area;
-
       if (!regionColors[group]) {
         group = 'unsorted';
         marker.setOpacity(0.5);
       }
+      */
+
+      let group = 'overworld';
+
+      for (const [k,[a,b]] of Object.entries(heightRanges)) {
+        if (z>=a && z<=b) {
+          group = k;
+        }
+      }
+
 
       if (!layers[group]) {
         layers[group] = L.layerGroup();
+
+        layers[group].id = group;
+
         //if (group!='unsorted')
-        layers[group].addTo(markerGroup);
+        //layers[group].addTo(markerGroup);
       }
 
       marker.addTo(layers[group]);
 
     }
+
+    for (const [k,v] of Object.entries(layers)) {
+      if (settings.activeLayers[k]) {
+        v.addTo(map);
+      }
+    }
+
 
     let text =`Total markers: ${data.features.length}`;
 
@@ -1322,7 +1367,6 @@ function drawMap() {
     updateZoom();
 
     searchControl = new L.Control.Search({propertyName: 'searchText', initial: false, layer: markerGroup, hideMarkerOnCollapse: true}).addTo(map);
-
 
     // mini map
 
