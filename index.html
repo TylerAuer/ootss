@@ -1059,7 +1059,7 @@ function openPopup(e) {
   let slug = nameLookup[id];
 
   if (slug) {
-    header += `<br>unlocked by: <a href="${getMapURL(slug)}" onclick="focusMarkerByName('${slug}')">${slug}</a>`;
+    header += `<br>Unlocked by: <a href="${getMapURL(slug)}" onclick="focusMarkerByName('${slug}')">${slug}</a>`;
   } else {
     header += '<br>';
   }
