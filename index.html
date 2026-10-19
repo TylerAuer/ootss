@@ -96,17 +96,17 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   font-size: 32px;
   color: white;
 
-    text-shadow: 
-        0 0 2px black,
-        0 0 4px black,
-        0 0 8px black,
-        0 0 16px black;
+  text-shadow: 
+      0 0 2px black,
+      0 0 4px black,
+      0 0 8px black,
+      0 0 16px black;
 
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: serif;
-  text-decoration: bold;
+  font-weight: bold;
   z-index: 9999;
   pointer-events: none !important;
 }
@@ -466,6 +466,10 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 let localDataName = 'joricsOotSS';
 let localData = JSON.parse(localStorage.getItem(localDataName)) || {};
 let settings = localData;
+
+let tileset_base = location.protocol === 'file:' ? '../ootss_tileset' : 'https://joric.github.io/ootss_tileset';
+
+let image_base = tileset_base;
 
 function saveSettings() {
   localStorage.setItem(localDataName, JSON.stringify(localData));
@@ -1068,7 +1072,7 @@ function openPopup(e) {
   const ytId = youtube[o.name] ? youTubeId(youtube[o.name]) : null;
 
   let image = imageList[o.name]
-    ? `<a href="javascript:openGallery('${o.name}')" title="Click to open image gallery" class="image-wrapper"><img class="popup-image" src="images/levels/${o.name}.webp"></a>`
+    ? `<a href="javascript:openGallery('${o.name}')" title="Click to open image gallery" class="image-wrapper"><img class="popup-image" src="${image_base}/images/levels/${o.name}.webp"></a>`
     : ytId
       ? `<a href="${youtube[o.name]}" class="image-wrapper" target="_blank" rel="noopener" title="Watch on YouTube"><img class="popup-image" src="https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg" alt=""></a>`
       : '';
@@ -1097,15 +1101,14 @@ function openPopup(e) {
 
 function drawMap() {
 
-  let tileset_base = location.protocol === 'file:' ? '../ootss_tileset' : 'https://joric.github.io/ootss_tileset';
-
   let baseLayers={}
 
   for (const name of ['overworld','sky','underworld']) {
-    baseLayers[`${name}_64k`] = L.tileLayer.canvas(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
+    //baseLayers[`${name}_64k`] = L.tileLayer.canvas(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
+    baseLayers[`${name}_64k`] = L.tileLayer(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
       tileSize: 512,
       maxNativeZoom: 7,
-      edgeBufferTiles: 1,
+      //edgeBufferTiles: 1,
       attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
     });
   }
@@ -1249,26 +1252,6 @@ function drawMap() {
     }
 
 
-    /*
-    let imageLayer2 = L.imageOverlay('images/overworld.webp', getImageBounds(6.67, 1919, 1079, -149+80,-88.0+83.3),{
-      attribution: '<a href="https://youtu.be/q3PUtYGl3J0?t=14" target=_blank>YouTube</a>',
-    });//.addTo(map);
-
-    layers['overworld1'] = imageLayer2;
-    */
-
-    /*
-    let imageLayer3 = L.imageOverlay('images/overworld_2160p.jpg', getImageBounds(13.34, 3840, 2160, -65, -5 ),{
-      attribution: '<a href="https://youtu.be/4m8R1BjjioU?t=90" target=_blank>YouTube</a>',
-      //opacity: 0.5,
-    });//.addTo(map);
-
-
-    layers['overworld'] = imageLayer3;
-    */
-
-    //imageLayer3.addTo(map);
-
     gridLayer = L.layerGroup();
 
     gridLayer.id = 'grid'; // for settings
@@ -1351,7 +1334,7 @@ function drawMap() {
       const count = solutions[name] ? '\u2714' : youtube[name] ? `\u2197` : hasImage ? '\u22EF' : '?';
 
       if (area != 'locations' && imageList[feature.properties.name]) {
-        images.push( {src: `images/levels/${name}.webp`, name: name, area: area, title: title});
+        images.push( {src: `${image_base}/images/levels/${name}.webp`, name: name, area: area, title: title});
       }
 
       let [x,y,z] = feature.geometry.coordinates;
@@ -1383,7 +1366,7 @@ function drawMap() {
         const f2 = featureLookup[o.entity_properties?.map_label_marker_id];
         if (f2) {
           const [x,y,z] = f2.geometry.coordinates;
-          marker = areaMarker([y,x], f2, o.entity_properties?.local_area_name);
+          marker = areaMarker([y+2,x], f2, o.entity_properties?.local_area_name);
           group = 'areas';
         }
       }
