@@ -49,7 +49,7 @@
 html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
 
 #map {
-  background-color: #333;
+  background-color: #666;
 }
 
 .custom-marker-container {
@@ -1226,6 +1226,8 @@ function drawMap() {
 
     gridLayer = L.layerGroup();
 
+    gridLayer.id = 'grid'; // for settings
+
     gw = 19;
     gh = 13;
 
@@ -1234,10 +1236,10 @@ function drawMap() {
 
     d = gh*10;
 
-    const hCells = 9*2;
-    const vCells = 7*2;
+    const hCells = 11;
+    const vCells = 12;
 
-    const origin = [cy - gh/2 + gh, cx - gw/2 + gw];
+    const origin = [cy - gh/2 + gh, cx];
 
     const bounds = [
         [origin[0] - (vCells/2)*gh, origin[1] - (hCells/2)*gw],
