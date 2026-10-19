@@ -67,8 +67,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 }
 
 .header {
-  font-size: 16px;
-  margin-bottom: -12px;
+  font-size: 14px;
 }
 
 .marker-label {
@@ -1060,14 +1059,6 @@ function openPopup(e) {
 
   let id = o.entity_properties?.unlocked_by_id;
 
-  let slug = nameLookup[id];
-
-  if (slug) {
-    header += `<br>Unlocked by: <a href="${getMapURL(slug)}" onclick="focusMarkerByName('${slug}')">${slug}</a>`;
-  } else {
-    header += '<br>';
-  }
-
   let sol = solutions[o.name];
 
   const ytId = youtube[o.name] ? youTubeId(youtube[o.name]) : null;
@@ -1092,6 +1083,13 @@ function openPopup(e) {
 
   //if (footer!='') footer += '&nbsp;/&nbsp;';
   //footer += `<a href="https://github.com/qiekn/ootss-cmd" target=_blank>ootss-cmd</a>`;
+
+  let slug = nameLookup[id];
+  if (slug) {
+    if (footer!='') footer += '&nbsp;/&nbsp;';
+    footer += `Unlocked by: <a href="${getMapURL(slug)}" onclick="focusMarkerByName('${slug}')">${slug}</a>`;
+  }
+
 
   content += footer;
 
