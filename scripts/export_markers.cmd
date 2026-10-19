@@ -11,14 +11,14 @@ if not exist "%out%" (
     python simp_tool.py extract "%package%" --output-dir "%out%"
 )
 
-rem python export_markers.py "%entities%" markers.geojson -x Inanimate -x GAME_PROM_Bars_Straight_MOR_A -x Wall_Set -x Rock -x Fence -x Decal -x Group -x Procedurally_Animating -x Point_Light -x Light_Probe -x Particle_Source
+if not exist schema.json (
+    python simp_tool.py schema "%GAME_DIR%\sinking_star.exe" -o schema.json
+)
 
-set filter=Level_Entry
+set filter=
 
-set filter=-x Inanimate -x GAME_PROM_Bars_Straight_MOR_A -x Wall_Set -x Fence -x Decal -x Group -x Procedurally_Animating -x Point_Light -x Light_Probe -x Particle_Source
+set filter=Level_Entry Area_Pin
 
-rem python simp_tool.py markers "%package%" markers.geojson --schema schema.json --entities "%entities%" %filter%
+rem set filter=-x Inanimate -x GAME_PROM_Bars_Straight_MOR_A -x Wall_Set -x Fence -x Decal -x Group -x Procedurally_Animating -x Point_Light -x Light_Probe -x Particle_Source
 
-python simp_tool.py markers "%package%" --output markers.geojson --schema schema.json --entities "%entities%" --entity-properties %filter%
-
-python enrich_markers.py -m markers.geojson -o markers.geojson %level_sets%
+python simp_tool.py markers "%package%" --output ../data/markers.json --schema schema.json --entities "%entities%" --entity-properties %filter%
