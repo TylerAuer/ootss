@@ -1132,6 +1132,7 @@ function drawMap() {
 
   markerGroup = L.layerGroup().addTo(map);
 
+/*
   let regionLayer = L.layerGroup();
 
   polygonLayer = L.geoJSON(regionData, {
@@ -1167,7 +1168,7 @@ function drawMap() {
 
       },
   });//.addTo(map);
-
+*/
 
   fetch('data/markers.json').then(r=>r.json()).then(data=>{
 
@@ -1257,8 +1258,8 @@ function drawMap() {
     //gridLayer.addTo(map);
 
     layers['grid'] = gridLayer;
-    layers['polygons'] = polygonLayer;
-    layers['regions'] = regionLayer;
+//    layers['polygons'] = polygonLayer;
+//    layers['regions'] = regionLayer;
 
     //regionLayer.addTo(map);
 
@@ -1620,10 +1621,13 @@ window.onload = function() {
     order = Object.fromEntries(ord.split('\n').map(s => s.trim()).filter(Boolean).map((s, i) => [s, i]));
     wt = Object.fromEntries(wtd.trim().split('\n').map(s => { const [n,a,i] = s.trim().split(','); return [n, [a,i]]; }));
 
+    drawMap();
+    /*
     fetch('data/regions.json').then(r=>r.json()).then(data=>{
       regionData = data;
       drawMap();
     });
+    */
 
   });
 
