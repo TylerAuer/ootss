@@ -1095,6 +1095,16 @@ function drawMap() {
 
   map.on('baselayerchange', function(e) {
     baseLayerChange(e.name);
+    for (const [k,v] of Object.entries(baseLayers)) {
+
+      if (e.name==k) {
+        settings.activeLayers[k] = true;
+      } else {
+        delete settings.activeLayers[k];
+      }
+    }
+
+    saveSettings();
   });
 
   if (settings.center && settings.zoom) {
