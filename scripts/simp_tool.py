@@ -39,7 +39,7 @@ POSITION_FIELDS = {"position.x": "x", "position.y": "y", "position.z": "z"}
 LEVEL_NAME_FIELD = "level_name"
 
 # Mixed level sets: never used as "area" if a regular set lists the level.
-GENERIC_LEVEL_SETS = {"overworld", "intro", "intro_hard_puzzles"}
+GENERIC_LEVEL_SETS = {"overworld", "intro", "intro_hard_puzzles", "design_illustrations" }
 
 EPILOG = """\
 examples:

@@ -478,6 +478,7 @@ let markerGroup = null;
 let regionData = null;
 let lang = null;
 const nameLookup = {};
+const featureLookup = {};
 
 let regionColors = {
   // heroes_in_3d: `lightgrey`, // better transparent
@@ -616,11 +617,11 @@ let baseIcon = (feature) => {
 };
 
 
-let areaIcon = (feature) => {
+let areaIcon = (feature, label) => {
   let size = 256;
   return L.divIcon({
     className: 'region-label',
-    html: lang[feature?.properties?.entity_properties?.local_area_name],
+    html: lang[label],
     iconSize: [500, 100],
     iconAnchor: [250, 50],
   });
@@ -633,7 +634,7 @@ const getIcon = f => ({bg: 'red', fg: 'blue'});
 
 const customMarker = (latlng, feature) => L.marker(latlng, {searchText: feature.properties.name?.toLowerCase(), feature: feature, id: feature.properties.id, icon: baseIcon(feature)});
 
-const areaMarker = (latlng, feature) => L.marker(latlng, {searchText: feature.properties.name?.toLowerCase(), feature: feature, id: feature.properties.id, icon: areaIcon(feature)});
+const areaMarker = (latlng, feature, label) => L.marker(latlng, {zIndexOffset: 1000, searchText: label.toLowerCase(), feature: feature, id: feature.properties.id, icon: areaIcon(feature, label)});
 
 
 let mainSwiper = null;
@@ -832,24 +833,8 @@ function updateZoom() {
 
   document.querySelectorAll('.region-label').forEach(label => {
     //label.style.display = showLabels ? 'block' : 'none';
-    label.style.fontSize = Math.max(12, currentZoom*10) + 'px';
+    label.style.fontSize = Math.max(18, currentZoom*8) + 'px';
   });
-
-  /*
-  let shouldShow = zoom <= 4;
-
-  if (shouldShow) {
-      if (!map.hasLayer(polygonLayer)) {
-          map.addLayer(polygonLayer);
-      }
-      //polygonLayer.setStyle({ 0.25, 0.25 });
-  } else {
-      if (map.hasLayer(polygonLayer)) {
-          map.removeLayer(polygonLayer);
-      }
-  }
-  */
-
 }
 
 function showAlert(textContent) {
@@ -1346,6 +1331,10 @@ function drawMap() {
     let area = '';
 
     for (const feature of data.features) {
+      featureLookup[feature.properties.id] = feature;
+    }
+
+    for (const feature of data.features) {
 
       let o = feature.properties;
 
@@ -1393,8 +1382,12 @@ function drawMap() {
       if (o.type == 'Level_Entry') {
         marker = customMarker(latlng, feature);
       } else if (o.type == 'Area_Pin' ) {
-        marker = areaMarker(latlng, feature);
-        group = 'areas';
+        const f2 = featureLookup[o.entity_properties?.map_label_marker_id];
+        if (f2) {
+          const [x,y,z] = f2.geometry.coordinates;
+          marker = areaMarker([y,x], f2, o.entity_properties?.local_area_name);
+          group = 'areas';
+        }
       }
 
       if (!marker) continue;
@@ -1442,7 +1435,6 @@ function drawMap() {
         v.addTo(map);
       }
     }
-
 
     let text =`Total markers: ${data.features.length}`;
 
