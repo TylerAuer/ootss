@@ -520,6 +520,8 @@ let gridLayer = null;
 
 let areaCounters = {};
 
+let baseLayerName = '';
+
 function getSolutionPlayerLink(name, solvable) {
   if (solvable) {
     return `play.html#${name}`;
@@ -613,25 +615,25 @@ let baseIcon = (feature) => {
   });
 };
 
+
 let areaIcon = (feature) => {
-  let size = 48;
+  let size = 256;
   return L.divIcon({
-    className: 'divIcon',
-    html: getIconHTML(feature, size),
-    iconSize:     [size, size], // size of the icon
-    iconAnchor:   [size/2, size-5], // point of the icon which will correspond to marker's location
-    popupAnchor:  [0, -size*1], // point from which the popup should open relative to the iconAnchor
+    className: 'region-label',
+    html: lang[feature?.properties?.entity_properties?.local_area_name],
+    iconSize: [500, 100],
+    iconAnchor: [250, 50],
   });
 };
 
 
 let icons = {};
 
-
 const getIcon = f => ({bg: 'red', fg: 'blue'});
 
+const customMarker = (latlng, feature) => L.marker(latlng, {searchText: feature.properties.name?.toLowerCase(), feature: feature, id: feature.properties.id, icon: baseIcon(feature)});
 
-const customMarker = (latlng, feature) => L.marker(latlng, {searchText: feature.properties.name?.toLowerCase(), feature: feature, id: feature.properties.path, icon: baseIcon(feature)});
+const areaMarker = (latlng, feature) => L.marker(latlng, {searchText: feature.properties.name?.toLowerCase(), feature: feature, id: feature.properties.id, icon: areaIcon(feature)});
 
 
 let mainSwiper = null;
@@ -830,7 +832,7 @@ function updateZoom() {
 
   document.querySelectorAll('.region-label').forEach(label => {
     //label.style.display = showLabels ? 'block' : 'none';
-    label.style.fontSize = (currentZoom*10) + 'px';
+    label.style.fontSize = Math.max(12, currentZoom*10) + 'px';
   });
 
   /*
@@ -1022,6 +1024,21 @@ function updateCRS(provider) {
 
 function baseLayerChange(name) {
   updateCRS(name);
+
+
+  map.eachLayer(function(marker) {
+    if (marker?.feature?.properties.type == 'Area_Pin') {
+      const [x,y,z] = marker.feature.geometry.coordinates;
+
+      let base= name.replace('_64k','');
+
+      if (heightRanges[base]) {
+        const [a,b] = heightRanges[base];
+        marker._icon.style.visibility = (z>=a && z<=b) ? 'visible' : 'hidden';
+      }
+    }
+  })
+
 }
 
 const getCoordinates = marker => marker.feature.geometry.coordinates.map(String).join(',');
@@ -1172,12 +1189,6 @@ function drawMap() {
     saveSettings();
   });
 
-  for (const [k,v] of Object.entries(baseLayers)) {
-    if (settings.activeLayers[k]) {
-      v.addTo(map);
-    }
-  }
-
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   L.control.mousePosition({lngFirst: true, latFormatter:Math.round, lngFormatter:Math.round }).addTo(map);
@@ -1224,6 +1235,15 @@ function drawMap() {
       },
   });//.addTo(map);
 */
+
+
+  for (const [k,v] of Object.entries(baseLayers)) {
+    if (settings.activeLayers[k]) {
+      v.addTo(map);
+      baseLayerName = k;
+    }
+  }
+
 
   fetch('data/markers.json').then(r=>r.json()).then(data=>{
 
@@ -1372,19 +1392,8 @@ function drawMap() {
       if (o.type == 'Level_Entry') {
         marker = customMarker(latlng, feature);
       } else if (o.type == 'Area_Pin' ) {
-
-        marker = L.marker([y,x], {
-            icon: L.divIcon({
-                className: 'region-label',
-                html: lang[o.entity_properties?.local_area_name],
-                iconSize: [500, 100],
-                iconAnchor: [250, 50],
-            }),
-            zIndexOffset: 1000,
-        });
-
+        marker = areaMarker(latlng, feature);
         group = 'areas';
-
       }
 
       if (!marker) continue;
@@ -1530,6 +1539,7 @@ function drawMap() {
       focusMarkerByName(name);
     }
 
+    baseLayerChange(baseLayerName);
 
   })
 
