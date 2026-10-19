@@ -33,7 +33,7 @@
 <link href="js/lib/leaflet-minimap/Control.MiniMap.min.css"  rel="stylesheet" >
 <script src="js/lib/leaflet-minimap/Control.MiniMap.min.js"></script>
 
-
+<script src="js/lib/leaflet-edgebuffer/leaflet.edgebuffer.min.js"></script>
 <script src="js/lib/leaflet-canvas/L.TileLayer.Canvas.min.js"></script>
 
 <script src="js/lib/imageSearch/image_search.js"></script>
@@ -1123,6 +1123,7 @@ function drawMap() {
     baseLayers[`${name}_64k`] = L.tileLayer.canvas(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
       tileSize: 512,
       maxNativeZoom: 7,
+      edgeBufferTiles: 2,
       attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
     });
   }
@@ -1398,7 +1399,6 @@ function drawMap() {
 
       if (!marker) continue;
 
-
       counters[feature.properties.area] = (counters[feature.properties.area]||0) +1;
 
       marker.feature = feature;
@@ -1427,7 +1427,6 @@ function drawMap() {
 
       if (!layers[group]) {
         layers[group] = L.layerGroup();
-
         layers[group].id = group;
 
         //if (group!='unsorted')
