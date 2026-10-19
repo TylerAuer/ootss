@@ -33,6 +33,9 @@
 <link href="js/lib/leaflet-minimap/Control.MiniMap.min.css"  rel="stylesheet" >
 <script src="js/lib/leaflet-minimap/Control.MiniMap.min.js"></script>
 
+
+<script src="js/lib/leaflet-canvas/L.TileLayer.Canvas.min.js"></script>
+
 <script src="js/lib/imageSearch/image_search.js"></script>
 
 <style>
@@ -44,6 +47,10 @@
 }
 
 html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+
+#map {
+  background-color: #333;
+}
 
 .custom-marker-container {
   position: relative;
@@ -1055,7 +1062,7 @@ function drawMap() {
   let baseLayers={}
 
   for (const name of ['overworld','sky','underworld']) {
-    baseLayers[`${name}_64k`] = L.tileLayer(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
+    baseLayers[`${name}_64k`] = L.tileLayer.canvas(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
       tileSize: 512,
       maxNativeZoom: 7,
       attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
@@ -1079,7 +1086,7 @@ function drawMap() {
 
   map = L.map('map', {
     crs: crs.crs,
-    zoom: 3.5,
+    zoom: 0,
     center: crs.center,
     zoomControl: false,
     maxZoom: 7,
@@ -1114,7 +1121,7 @@ function drawMap() {
     saveSettings();
   });
 
-  if (settings.center && settings.zoom) {
+  if (settings.center) {
     map.setView(settings.center, settings.zoom, { animate: false });
   }
 
