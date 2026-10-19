@@ -1061,7 +1061,7 @@ function openPopup(e) {
   if (slug) {
     header += `<br>unlocked by: <a href="${getMapURL(slug)}" onclick="focusMarkerByName('${slug}')">${slug}</a>`;
   } else {
-    header += '<br>unlocked by: no info';
+    header += '<br>';
   }
 
   let sol = solutions[o.name];
