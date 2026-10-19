@@ -1103,12 +1103,17 @@ function drawMap() {
 
   let baseLayers={}
 
-  for (const name of ['overworld','sky','underworld']) {
+  for (const name of ['overworld_64k','sky_64k','underworld_64k']) {
+
+    let b = config[name].bounds;
+    let bounds = [[b.top,b.left],[b.bottom,b.right]]
+
     //baseLayers[`${name}_64k`] = L.tileLayer.canvas(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
-    baseLayers[`${name}_64k`] = L.tileLayer(`${tileset_base}/tiles/${name}_64k/{z}/{y}/{x}.webp`, {
+    baseLayers[name] = L.tileLayer(`${tileset_base}/tiles/${name}/{z}/{y}/{x}.webp`, {
       tileSize: 512,
       maxNativeZoom: 7,
       //edgeBufferTiles: 1,
+      bounds: bounds,
       attribution: '<a href="https://github.com/joric/ootss/wiki" target=_blank>Joric\'s OotSS Map</a>',
     });
   }
