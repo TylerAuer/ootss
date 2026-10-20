@@ -1143,7 +1143,7 @@ function drawMap() {
   let baseLayer = Object.values(baseLayers)[0]
 
   if (!settings.activeLayers) {
-    settings.activeLayers = {'overworld_64k':true, 'overworld':true};
+    settings.activeLayers = {'overworld_64k':true, 'overworld':true, 'areas': true};
   }
 
   let crs = L.CRS.Simple;
