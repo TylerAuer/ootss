@@ -20,3 +20,4 @@ endpoint_gates,https://youtu.be/6YxAXZoA4eE
 indirect_skip_3,https://youtu.be/-zSGRTRgM2k
 mirror_promesst,https://youtu.be/znnskSR6TTE
 rover_shift_p,https://youtu.be/qWJ-UgUcKZ4
+two_bounce_v2,https://youtu.be/0TBFiaZag8M?t=3046
