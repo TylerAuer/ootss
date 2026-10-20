@@ -1102,7 +1102,7 @@ function openPopup(e) {
 function syncSearchLayer() {
   searchLayer.clearLayers();
   for (const g of Object.values(layers)) {
-    if (g.id === 'grid' || !map.hasLayer(g)) continue;
+    if (g.id === 'grid' || g.id=='areas' || !map.hasLayer(g)) continue;
     g.eachLayer(l => { if (l instanceof L.Marker) searchLayer.addLayer(l); });
   }
 }
