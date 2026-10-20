@@ -478,6 +478,7 @@ let mapParam = {};
 
 let map = null;
 let markerGroup = null;
+let searchLayer = null;
 let regionData = null;
 let lang = null;
 const nameLookup = {};
@@ -1098,6 +1099,14 @@ function openPopup(e) {
   marker.openPopup();
 }
 
+function syncSearchLayer() {
+  searchLayer.clearLayers();
+  for (const g of Object.values(layers)) {
+    if (g.id === 'grid' || !map.hasLayer(g)) continue;
+    g.eachLayer(l => { if (l instanceof L.Marker) searchLayer.addLayer(l); });
+  }
+}
+
 function drawMap() {
 
   let baseLayers={}
@@ -1144,9 +1153,9 @@ function drawMap() {
     //wheelPxPerZoomLevel: 100,
   });
 
-
   map.on('overlayadd', function(e) {
     settings.activeLayers[e.layer.id] = true;
+    syncSearchLayer();
     updateLabels();
     saveSettings();
   });
@@ -1407,18 +1416,16 @@ function drawMap() {
         layers[group] = L.layerGroup();
         layers[group].id = group;
 
+        if (settings.activeLayers[group]) {
+          layers[group].addTo(markerGroup);
+        }
+
         //if (group!='unsorted')
         //layers[group].addTo(markerGroup);
       }
 
       marker.addTo(layers[group]);
 
-    }
-
-    for (const [k,v] of Object.entries(layers)) {
-      if (settings.activeLayers[k]) {
-        v.addTo(markerGroup);
-      }
     }
 
     let text =`Total markers: ${data.features.length}`;
@@ -1438,15 +1445,17 @@ function drawMap() {
     );
 
     // sort overlay names
-    //overlaysWithCounts = Object.fromEntries( Object.entries(overlaysWithCounts).sort((a, b) => a[0].localeCompare(b[0])) );
+    overlaysWithCounts = Object.fromEntries( Object.entries(overlaysWithCounts).sort((a, b) => a[0].localeCompare(b[0])) );
 
     let layercontrol = L.control.layers(baseLayers, overlaysWithCounts, {collapsed: true, position: 'bottomleft'}).addTo(map);
 
+    searchLayer = L.layerGroup();
+    syncSearchLayer();
+
+    searchControl = new L.Control.Search({propertyName: 'searchText', initial: false, layer: searchLayer, hideMarkerOnCollapse: true}).addTo(map);
+
     map.on('zoom overlayadd', updateLabels);
-
     updateLabels();
-
-    searchControl = new L.Control.Search({propertyName: 'searchText', initial: false, layer: markerGroup, hideMarkerOnCollapse: true}).addTo(map);
 
     // mini map
 
